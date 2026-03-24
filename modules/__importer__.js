@@ -1,0 +1,1 @@
+// Dependancies: modules/liveNotifications.js, modules/moveTools.js, modules/restoreTools.js, modules/GUIPanel.js, modules/makePageNonShort.js, modules/purgePage.js, modules/userTemplating.js, modules/speedyDelete.js, modules/voteForDelete.js

@@ -1,0 +1,176 @@
+/*
+	Module script
+	This module adds a "vote for delete" button to the tools dropdown
+*/
+// Dependancies: lib/editTools.js, core/settings.js, lib/userFeedback.js, lib/form.js, modules/speedyDelete.js
+
+wToolCore.showVoteForDeletePageUI = function() {
+	var configData = wToolCore.perWikiConfig.VFD;
+	var redirectData = [];
+
+	function makeRequest(dialog, onComplete) {
+		wToolCore.displayInfo("Posting to " + configData.target_page + ".")
+		var reportReason = dialog.reason.value.trim();
+		var scoretext = dialog.scoretext.value.trim();
+		var pageName = mw.config.get('wgPageName');
+		var redirectsDeleting = 0;
+		var additionalRedirectText = "";
+		var setVars = (function(string, content) {return string.replace("{{{PAGE}}}", pageName).replace("{{{SCORETEXT}}}", scoretext).replace("{{{REASON}}}", reportReason).replace("{{{CONTENT}}}", content).replace("{{{REDIRECTS}}}", additionalRedirectText)});
+
+
+		var redirectCheckbox = dialog.deleteredirects;
+		if (redirectCheckbox != null && redirectCheckbox.isSelected()) {
+			for (var redirectIndex in redirectData) {
+				var redirect = redirectData[redirectIndex];
+				if (dialog["redirectoption_" + redirect.title].isSelected()) {
+					redirectsDeleting ++;
+					if (!additionalRedirectText) additionalRedirectText += setVars(configData.redirect_append_start);
+					else additionalRedirectText += setVars(configData.redirect_append);
+				}
+			}
+		}
+
+		var editSummary = '[Starting a vote to delete [[' + pageName + ']]' +
+			(redirectsDeleting > 0 ?
+			' (And [[Special:WhatLinksHere/' + pageName + '|' +
+				redirectsDeleting + ' Redirect' + (redirectsDeleting !== 1 ? 's' : '') + ']])' :
+			'') +
+		'] ' + reportReason;
+
+		var shortEditSummary = '[Starting a vote to delete [[' + pageName + ']]] ' + reportReason;
+		var message = setVars(mw.config.get("wgIsRedirect") ? configData.redirect_append : configData.message);
+
+
+		// If there is no message to send to a page, assume that we must put the templates on all redirects.
+		if (!configData.send_page_notice && redirectsDeleting > 0) for (var redirect in redirectData) {
+			if (dialog["redirectoption_" + redirect.title].isSelected()) {
+				return wToolCore.generateEditRequest({
+					text: setVars(configData.send_page_notice, revision.content),
+					summary: editSummary
+				})
+			}
+		}
+
+		if (configData.target_page) new mw.Api().get({
+				action:"parse",
+				prop:"wikitext",
+				page:configData.target_page
+		}).then(function(ret) {
+			wToolCore.editPage({
+					title: configData.target_page,
+					summary: editSummary,
+					text: wToolCore.handleStringEdit(ret.parse.wikitext["*"], configData.append_message_rules, message)
+			}).then(function() {
+				wToolCore.displaySuccessAfterReload("Successfuly started vote!");
+
+				// Posting the template is required if there is no target page.
+				if (configData.send_page_notice) {
+					wToolCore.displayInfo("Adding VFD template to page.")
+
+					new mw.Api().edit(pageName, function(revision) {
+						return wToolCore.generateEditRequest({
+							text: setVars(configData.send_page_notice, revision.content),
+							summary: shortEditSummary
+						})
+					}).then(
+						function() {
+							onComplete();
+							location.reload();
+						},
+						function(error, e) {
+							onComplete();
+							wToolCore.displayError("Failed to post page template.");
+							wToolCore.displayErrorJSON(error, e);
+						}
+					);
+				}
+				// Should we go to the QVFD page
+				else if (wToolCore.settings.SPEEDY_DELETE_REDIRECTS) {
+					location.href = wToolCore.getArticlePath(configData.target_page);
+				}
+				//
+				else {
+					onComplete();
+					wToolCore.displaySuccess("Added to " + configData.target_page + ".");
+				}
+			}, function(error) {
+				onComplete();
+				wToolCore.displayErrorJSON(error);
+			});
+		});
+		else {
+			// No request page to edit, instead directly add the template to this page
+			new mw.Api().edit(pageName, function(revision) {
+				return wToolCore.generateEditRequest({
+					text: setVars(configData.send_page_notice, revision.content),
+					summary: shortEditSummary
+				})
+			}).then(function() {
+				onComplete();
+				location.reload();
+			});
+		}
+	}
+
+	if (configData === null) {
+		mw.notify("Speedy delete not configured on this wiki!", {type: "error", tag: "err-sp-delete"});
+		return;
+	}
+	// Ask the user to input why they want to delete this page.
+	new mw.Api().get({
+		"action": "query",
+		"prop": "redirects",
+		"titles": mw.config.get("wgRelevantPageName"),
+		"formatversion": 2
+	}).then(function(data) {
+		hasLoadedPageData = true;
+		if ("redirects" in data.query.pages[0]) redirectData = data.query.pages[0].redirects;
+		var content = [
+			{
+				type: "textbox",
+				name: "reason",
+				text: "Reason:",
+				placeholder: "Reason"
+			},
+			{
+				type: "textbox",
+				name: "scoretext",
+				text: "Score Text:",
+				placeholder: "Score Text"
+			}
+		];
+		if (redirectData.length > 0) {
+			content.push({
+				type: "checkbox",
+				name: "deleteredirects",
+				onclick: function(form) {
+					var checked = form.deleteredirects.isSelected();
+					for (var redirectIndex in redirectData)
+						form["redirectoption_" + redirectData[redirectIndex].title].setDisabled(!checked);
+				},
+				text: "Also request deletion of redirects"
+			});
+		}
+		for (var redirectIndex in redirectData) {
+			var redirect = redirectData[redirectIndex];
+			content.push({
+				type: "checkbox",
+				value: true,
+				style: "display:none",
+				name: "redirectoption_" + redirect.title,
+				text: '+ "' + redirect.title + '" (redirect)',
+				disabled: true
+			});
+		}
+		wToolCore.createForm("Request speedy deletion for page", content, {
+			onSubmit: function(dialog) {
+				makeRequest(dialog, function() {dialog.close()});
+			}
+		});
+	});
+}
+
+
+if (wToolCore.perWikiConfigReady && mw.config.get("wgNamespaceNumber") >= 0 && mw.config.get('wgPageName').replace(/_/g, " ") !== wToolCore.perWikiConfig.VFD.target_page.replace(/_/g, " ")) {
+	wToolCore.addToolButton("ca-VFD", "Vote for delete", "Add this page to VFD.", wToolCore.showVoteForDeletePageUI);
+}
