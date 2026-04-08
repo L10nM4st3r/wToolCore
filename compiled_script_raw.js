@@ -2552,8 +2552,6 @@ wToolCore.deletePage = function(pageTitle, reason, deletetalk) {
 
 
 
-
-
 // Creates a form dialouge menu.
 
 wToolCore.createForm = function(title, form_content, settings) {
@@ -2563,6 +2561,12 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 
 	mw.loader.using( [ 'oojs-ui-windows', 'oojs-ui-widgets', 'oojs-ui-core', 'oojs-ui', 'oojs' ] ).then(function() {
+
+		var windowManager = new OO.ui.WindowManager();
+
+		$('body').append( windowManager.$element);
+
+		
 
 		function FormMenu( config ) {
 
@@ -2574,9 +2578,13 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 	
 
-		FormMenu.static.name = 'lion-formMenu';
+		var formMenuName = 'lion-formMenu' + toString(Math.random())
+
+		FormMenu.static.name = formMenuName;
 
 		FormMenu.static.title = title;
+
+
 
 		FormMenu.static.actions = settings.onSubmit != null ? [
 
@@ -2640,9 +2648,11 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 					}
 
-					else if (item === "field end")
+					else if (item === "field end") {
 
 						field = null;
+
+					}
 
 				}
 
@@ -2776,6 +2786,28 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 				return new OO.ui.Process(function() {
 
+
+
+					try{
+
+					if (settings.submitTextPressed) {
+
+						windowManager.windows[formMenuName].$primaryActions[0].childNodes[0].childNodes[0].childNodes[1].innerText = settings.submitTextPressed;
+
+					}
+
+					} catch(e) {
+
+						console.error(e)
+
+						console.error(windowManager)
+
+					}
+
+					
+
+
+
 					console.log(dialog.on_submit_variables);
 
 					for (var i in dialog.on_submit_variables) {
@@ -2805,12 +2837,6 @@ wToolCore.createForm = function(title, form_content, settings) {
 			});
 
 		};
-
-		
-
-		var windowManager = new OO.ui.WindowManager();
-
-		$('body').append( windowManager.$element);
 
 	
 
@@ -2912,7 +2938,7 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 
 						type: "label",
 
-						text: 'Cannot move the page <b>"' + oldTitle + '"</b> to ' + wToolCore.getHtmlPageLink(newTitle) + ": a page by that name already exists."
+						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists.'
 
 					}
 
@@ -2934,7 +2960,7 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 
 								type: "label",
 
-								text: "Failed to delete "+wToolCore.getHtmlPageLink(newTitle)+": "+error2+"."
+								text: "Failed to delete " + newTitle + ": " + error2 + "."
 
 							}
 
@@ -2942,7 +2968,7 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 
 					});
 
-				}, submitText: "Delete Target Page"})
+				}, submitText: "Delete & Move", submitTextPressed: "Working..."})
 
 			}
 
@@ -2954,7 +2980,7 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 
 						type: "label",
 
-						text: 'Cannot move the page <b>"' + oldTitle + '"</b> to <a href="' + wToolCore.getArticlePath(newTitle) + '">"' + newTitle + '"</a>: a page by the name of ' + wToolCore.getHtmlPageLink(newTitle) + ' already exists. Ask an admin to delete it.'
+						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists. Ask an admin to delete it.'
 
 					}
 
@@ -2972,7 +2998,7 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 
 					type: "label",
 
-					text: 'Cannot move the page <b>"' + oldTitle + '"</b> to ' + wToolCore.getHtmlPageLink(newTitle) + ': ' + error + '.'
+					text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": ' + error + '.'
 
 				}
 
@@ -3044,6 +3070,20 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 
 			.attr('id', 'renameCategories-log');
 
+		
+
+		var logMessage = function(message, colour) {
+
+			log.append(
+
+				"<p>" + message + "</p>"
+
+			).css('color', colour);
+
+			console.log(message);
+
+		}
+
 
 
 
@@ -3114,11 +3154,13 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 
 			}).then(function() {
 
-				log.append(
+				logMessage(
 
-					"<p>"+(changesWereMade ? "Successfully changed link for" : "No changes made to")+" "+(wToolCore.getHtmlPageLink(pageTitle.title))+".</p>"
+					(changesWereMade ? "Successfully changed link for" : "No changes made to")+" "+(wToolCore.getHtmlPageLink(pageTitle.title)) + ".",
 
-				).css('color', changesWereMade ? 'green' : 'gray');
+					changesWereMade ? 'green' : 'gray'
+
+				)
 
 
 
@@ -3140,11 +3182,13 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 
 				if (error === "ratelimited") {
 
-					log.append(
+					logMessage(
 
-						"<p>Hit rate limit while editing "+wToolCore.getHtmlPageLink(pageTitle.title)+". Waiting 2 seconds to retry.</p>"
+						"Hit rate limit while editing "+wToolCore.getHtmlPageLink(pageTitle.title)+". Waiting 2 seconds to retry.",
 
-					).css('color', 'red');
+						'red'
+
+					)
 
 					clearTimeout();
 
@@ -3154,11 +3198,13 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 
 				else {
 
-					log.append(
+					logMessage(
 
-						"<p>Failed to update link for " + wToolCore.getHtmlPageLink(pageTitle.title)+": "+error+".</p>"
+						"Failed to update link for " + wToolCore.getHtmlPageLink(pageTitle.title)+": "+error+".",
 
-					).css('color', 'red');
+						'red'
+
+					)
 
 					if (wToolCore.settings.USER_IS_ADMIN) {
 
@@ -3400,23 +3446,25 @@ function wTools_moveSubpagesPressed() {
 
 						var talkpage = oldTitle.match(':') ? oldTitle.replace(':', ' talk:') : 'Talk:' + oldTitle;
 
-						log.append($('<p>').text(talkpage + ' could not be moved.').css('color', 'red'));
+
+
+						logMessage(
+
+							talkpage + ' could not be moved.',
+
+							'red'
+
+						)
 
 					} else if (response.move.talkfrom) {
 
-						log.append(
+						logMessage(
 
-							'<p>Successfully moved ' +
+							'Successfully moved ' + response.move.talkfrom + ' to ' + response.move.talkto + '.',
 
-							response.move.talkfrom +
+							'green'
 
-							' to ' +
-
-							response.move.talkto +
-
-							'.</p>'
-
-						).css('color', 'green');
+						)
 
 					}
 
@@ -3426,15 +3474,33 @@ function wTools_moveSubpagesPressed() {
 
 				if (response.error) {
 
-					log.append($('<p>').text(oldTitle + ' could not be moved.').css('color', 'red'));
+					logMessage(
 
-					log.append($('<p>').append('&bull; Reason: ' + response.error.info + '</li>').css('color', 'red'));
+						oldTitle + ' could not be moved.',
+
+						'red'
+
+					)
+
+					logMessage(
+
+						'&bull; Reason: ' + response.error.info,
+
+						'red'
+
+					)
 
 					if (onerror) onerror();
 
 				} else {
 
-					log.append("<p>Successfully moved "+wToolCore.getHtmlPageLink(response.move.from)+" to "+wToolCore.getHtmlPageLink(response.move.to)+".</p>").css('color', 'green');
+					logMessage(
+
+						"Successfully moved " + wToolCore.getHtmlPageLink(response.move.from) + " to " + wToolCore.getHtmlPageLink(response.move.to) + ".",
+
+						'green'
+
+					)
 
 					noerror();
 
