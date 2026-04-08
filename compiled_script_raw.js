@@ -1912,6 +1912,10 @@ wTools_config = undefined;
 
 if (!wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS) {
 
+	var NOTIFICATION_TIMEOUT = 1000 * 60;
+
+
+
 	var documentTitle = document.title;
 
 	var crossWiki = mw.user.options.get('echo-cross-wiki-notifications');
@@ -1958,7 +1962,7 @@ if (!wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS) {
 
 		if (lastUpdated == null || parseInt(lastUpdated) <= Date.now()) {
 
-			mw.storage.set("wToolCore:liveNotificationData:lastUpdate", JSON.stringify(Date.now() + 5000), 5500);
+			mw.storage.set("wToolCore:liveNotificationData:lastUpdate", JSON.stringify(Date.now() + NOTIFICATION_TIMEOUT), NOTIFICATION_TIMEOUT * 20);
 
 			
 
@@ -2036,7 +2040,7 @@ if (!wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS) {
 
 		getData();
 
-	}, 5000);
+	}, 1000 * 5);
 
 	getData();
 
