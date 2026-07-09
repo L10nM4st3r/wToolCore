@@ -328,6 +328,50 @@ wToolCore.perWikiConfig = {
 
 						editSummary: "Welcome back!"
 
+					},
+
+					{
+
+						template_name: "Give a Cookie",
+
+						tooltip: "Give this kind person a cookie, or 3.",
+
+						formHeader: "Give a Cookie",
+
+						description: "A basic welcome-back message.\nIncludes helpful reminders for older users.",
+
+						message: "== Cookie! ==\n{{Cookie|" + mw.config.get("wgUserName") + "|count={{{AMOUNT}}}|{{{REASON}}}}} ~~~~",
+
+						editSummary: "Have a cookie!",
+
+						arguments: [
+
+							{
+
+								name: "REASON",
+
+								type: "textbox",
+
+								placeholder: "Reason",
+
+								value: "You are awesome!"
+
+							},
+
+							{
+
+								name: "AMOUNT",
+
+								type: "textbox",
+
+								placeholder: "Amount",
+
+								value: "1"
+
+							}
+
+						]
+
 					}
 
 				]
