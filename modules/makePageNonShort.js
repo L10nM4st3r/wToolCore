@@ -16,7 +16,7 @@ wToolCore.makePageNonShort = function() {
 			pageText += "\n\n/* " + notShortText + " */";
 		}
 		else {
-			pageText += "<noinclude>\n\n<!-- " + notShortText + "--></noinclude>";
+			pageText += "\n<noinclude>\n\n<!-- " + notShortText + "--></noinclude>";
 		}
 		wToolCore.editPage({
 			title: mw.config.get("wgRelevantPageName"),
