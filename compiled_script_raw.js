@@ -18,7 +18,7 @@
 
 var W_TOOLS_VERSION_ID = 1;
 
-var W_TOOLS_VERSION_STRING = "2.0";
+var W_TOOLS_VERSION_STRING = "2.0.5.4";
 
 var W_TOOLS_CHANGELOG = [
 
@@ -3070,6 +3070,10 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 
 
 
+	
+
+
+
 	wToolCore.getEntireApiRequest(request, function(pages) {
 
 		console.log("Got "+pages.length+" page(s) to fix.")
@@ -3632,7 +3636,7 @@ function wTools_changeLinksOnly() {
 
 	
 
-	pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
+	wTools_pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
 
 	wTools_doPostMoveStuff(oldTitle, newTitle, false);
 
@@ -4898,7 +4902,7 @@ wToolCore.makePageNonShort = function() {
 
 		else {
 
-			pageText += "<noinclude>\n\n<!-- " + notShortText + "--></noinclude>";
+			pageText += "\n<noinclude>\n\n<!-- " + notShortText + "--></noinclude>";
 
 		}
 

@@ -81,6 +81,8 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 	var request = {action:"query", format:"json", prop:(fixLinks ? "linkshere" : "")+"|"+(fixTransclusions ? "transcludedin" : "")+"|"+(wToolCore.settings.VIEWING_NAMESPACE === 6 ? "fileusage" : ""), titles : pageName, formatversion:"2"};
 	if (isCategory) request = {action:"query", format:"json", list:"categorymembers", cmtitle: pageName, cmlimit:"250"};
 
+	
+
 	wToolCore.getEntireApiRequest(request, function(pages) {
 		console.log("Got "+pages.length+" page(s) to fix.")
 
@@ -362,7 +364,7 @@ function wTools_changeLinksOnly() {
 		to_page = $('input[name=wpNewTitleMain]').val(),
 		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page);
 	
-	pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
+	wTools_pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
 	wTools_doPostMoveStuff(oldTitle, newTitle, false);
 }
 
