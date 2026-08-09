@@ -31,6 +31,11 @@ wToolCore.settings.EDIT_TAG_TO_USE = {
 if (!wToolCore.settings.EDIT_TAG_TO_USE) wToolCore.settings.EDIT_TAG_TO_USE = "";
 
 
+
+wToolCore.pageTitle = document.getElementsByClassName("mw-first-heading")[0].innerText;
+wToolCore.pageName = mw.config.get("wgRelevantPageName");
+
+
 //var wTools = {
 	//isPageWatched: document.getElementById("ca-watch") !== null,
 	//canProtectPage: mw.config.get("wgRestrictionEdit") !== null,

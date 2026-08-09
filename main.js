@@ -7,7 +7,7 @@
 
 
 var W_TOOLS_VERSION_ID = 1;
-var W_TOOLS_VERSION_STRING = "2.0.5.4";
+var W_TOOLS_VERSION_STRING = "2.1.0.0";
 var W_TOOLS_CHANGELOG = [
 	"Complete code refactor.",
 	"Fixed several bugs with a few of the tools.",

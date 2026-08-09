@@ -48,13 +48,6 @@ wToolCore.settings.USE_NEW_DIFF_SCREEN = true;
 */
 wToolCore.settings.SPEEDY_DELETE_REDIRECTS = do_default(wTools_config.speedyDeleteShouldRedirect, false);
 
-
-/*
-	Whether or not the editor is enabled. User defined.
-*/
-wToolCore.settings.EDITOR_ENABLED = do_default(wTools_config.editorEnabled, true);
-
-
 /*
 	The edit summary for mass rollback. User defined.
 */
@@ -71,6 +64,12 @@ wToolCore.settings.ROLLBACK_ALL_DEFAULT_REASON = do_default(wTools_config.rollba
 	Whether or not to show the diff after restoring a version. User defined.
 */
 wToolCore.settings.ROLLBACK_SHOW_DIFF_AFTER_RESTORE = do_default(wTools_config.showDiff, true);
+
+
+/*
+	The text size of the editor. User defined.
+*/
+wToolCore.settings.USE_EDITOR = do_default(wTools_config.use_editor, false);
 
 
 /*

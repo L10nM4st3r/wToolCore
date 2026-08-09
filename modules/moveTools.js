@@ -201,8 +201,9 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 		return output;
 	});
 }
-function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl) {
+function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_links) {
 	redirectUrl = do_default(redirectUrl, true);
+	force_change_links = do_default(force_change_links, false);
 
 	console.log("Now changing page links (if settings enabled).")
 	getFixPagecache();
@@ -210,7 +211,7 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl) {
 
 	// If this page is a category
 	if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
-		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked');
+		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked') || force_change_links;
 
 		if (changeCategoryLinks) {
 			index = 0;
@@ -221,8 +222,8 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl) {
 		else location.href = wToolCore.getArticlePath(toTitle);
 	}
 	else {
-		var changeTransclusions = $('input[name=changeTransclusions]').prop('checked');
-		var changeLinks = $('input[name=changeLinks]').prop('checked');
+		var changeTransclusions = $('input[name=changeTransclusions]').prop('checked') || force_change_links;
+		var changeLinks = $('input[name=changeLinks]').prop('checked') || force_change_links;
 
 		if (changeLinks || changeTransclusions) {
 			index = 0;
@@ -365,7 +366,7 @@ function wTools_changeLinksOnly() {
 		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page);
 	
 	wTools_pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
-	wTools_doPostMoveStuff(oldTitle, newTitle, false);
+	wTools_doPostMoveStuff(oldTitle, newTitle, false, true);
 }
 
 
