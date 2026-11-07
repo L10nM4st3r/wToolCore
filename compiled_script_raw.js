@@ -1656,6 +1656,163 @@ wToolCore.namespaceNameToNSN = function(pageTitle) {
 
 
 
+
+
+
+
+
+
+
+
+/**
+
+ * Replaces links in a page's wikitext.
+
+ * @param {String} fromPage The target page with links that are to be changed.
+
+ * @param {String} toPage The page to update the links to lead to.
+
+ * @param {String} thisPage The name of this page. Required to properly update relative links as well.
+
+ * @returns {String} The text with links replaced.
+
+ */
+
+wToolCore.replaceLink = function(text, fromPage, toPage, thisPage) {
+
+	var old_is_page_category = fromPage.toLowerCase().startsWith("category:");
+
+	var old_is_page_file = fromPage.toLowerCase().startsWith("file:");
+
+	var old_is_page_template = fromPage.toLowerCase().startsWith("template:");
+
+
+
+	var new_is_page_category = toPage.toLowerCase().startsWith("category:");
+
+	var new_is_page_file = toPage.toLowerCase().startsWith("file:");
+
+	var new_is_page_template = toPage.toLowerCase().startsWith("template:");
+
+	
+
+
+
+
+
+	// Handle links
+
+	var index = 0;
+
+	while (index < text.length) {
+
+		index = text.indexOf("[[");
+
+
+
+		// Get if this is a colon link
+
+		var end = text.indexOf("]]", index);
+
+		var link_text = text.slice(index + 2, end).trim();
+
+		var is_piped_link = link_text.indexOf("|") !== -1;
+
+		var raw_link = link_text.slice(0, link_text.indexOf("|")).trim();
+
+
+
+
+
+		if (raw_link.toLowerCase() !== fromPage.trim().toLowerCase()) {
+
+			continue;
+
+		}
+
+		console.log(link_text, raw_link);
+
+
+
+		var colon_link = raw_link[0] == ":";
+
+
+
+
+
+		// Add colon if: there isn't a colon already, and target page is being moved into (and not starting in either of them) category/file is a simple link.
+
+		var new_is_cat_or_file = new_is_page_file || new_is_page_category;
+
+		var old_is_cat_or_file = old_is_page_file || old_is_page_category;
+
+
+
+		var should_add_colon = (new_is_cat_or_file && !old_is_cat_or_file) && !colon_link;
+
+
+
+		// Remove colon if: Not adding one, moving out of category or file
+
+		var should_remove_colon = !should_add_colon && (!new_is_cat_or_file && old_is_cat_or_file);
+
+
+
+		colon_link = (colon_link || should_add_colon) && !should_remove_colon;
+
+
+
+
+
+
+
+
+
+		var new_link_text = (colon_link ? ":" : "") + toPage
+
+
+
+		// From page is in mainspace, add pipe link.
+
+		if (!is_piped_link && fromPage.indexOf(":") !== -1) {
+
+			// Add piped link
+
+			new_link_text += "|" + fromPage;
+
+		}
+
+
+
+		if (is_piped_link) {
+
+			new_link_text += link_text.slice(link_text.indexOf("|"), link_text.length);
+
+		}
+
+
+
+
+
+		text = text.slice(0, index + 2) + new_link_text + text.slice(end, text.length);
+
+	}
+
+
+
+	return text
+
+
+
+
+
+	// Handle relative links (turn them to global links, then turn them back)
+
+	// Handle files, templates, categories
+
+	// Add link pipes when moving any file without a namespace that doesn't have a pipe
+
+}
 /*
 
 	Config script
@@ -1664,7 +1821,7 @@ wToolCore.namespaceNameToNSN = function(pageTitle) {
 
 */
 
-// Dependancies: core/settings_wiki_dependant.js,  lib/helpers.js
+// Dependancies: core/settings_wiki_dependant.js, lib/helpers.js
 
 
 
@@ -2940,13 +3097,31 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 
 
-var wTools_pagesMoved = [];
+var do_default = function(value, default_value) {
+
+	return value === null || value === undefined ? default_value : value;
+
+}
 
 
 
-function wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch, supressRedirect) {
 
-	console.log("Moving page "+oldTitle+" to "+newTitle);
+
+
+
+function wtools_moveSinglePage(oldTitle, newTitle, reason, params, then) {
+
+	params = do_default(params, {});
+
+	var movetalk = do_default(params.movetalk, true);
+
+	var watch = do_default(params.watch, false);
+
+	var supressRedirect = do_default(params.supressRedirect, false);
+
+
+
+	console.log("Moving page " + oldTitle + " to " + newTitle);
 
 	return new mw.Api().post({
 
@@ -2956,11 +3131,11 @@ function wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch,
 
 		to: newTitle,
 
-		reason: reason,
+		reason: reason + wToolCore.settings.EDIT_AD_TO_USE,
 
-		movetalk: movetalk,
+		movetalk: movetalk ? "yes" : void 0,
 
-		watchlist: watch,
+		watchlist: watch ? "watch" : void 0,
 
 		noredirect: supressRedirect ? "1" : false,
 
@@ -2970,513 +3145,57 @@ function wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch,
 
 		tags: wToolCore.settings.EDIT_TAG_TO_USE ? wToolCore.settings.EDIT_TAG_TO_USE : ""
 
-	});
+	}).then(
 
-}
+		function() {
 
-function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then) {
+			//logMessage(
 
-	wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch, supressRedirect).then(function(response) {
+			//	"Successfully moved " + wToolCore.getHtmlPageLink(oldTitle) + " to " + wToolCore.getHtmlPageLink(newTitle) + ".",
 
-		if (response.move) {
+			//	'green'
 
-			wTools_pagesMoved.push({
+			//)
 
-				from: response.move.from,
+			params.pages_moved.push({"from": oldTitle, "to": newTitle});
 
-				to: response.move.to,
+			then();
 
-				ns: wToolCore.namespaceNameToId(response.move.to)
+		},
 
-			});
+		function(error) {
 
-		}
+			console.error(error)
 
-		then(response);
+			if (error === "articleexists") {
 
-	},
+				wtools_movePageError_pageExists(oldTitle, newTitle, reason, params, then);
 
-	function(error) {
-
-		if (error === "articleexists") {
-
-			if (wToolCore.settings.USER_IS_ADMIN) {
-
-				wToolCore.createForm("Cannot move page", [
-
-					{
-
-						type: "label",
-
-						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists.'
-
-					}
-
-				], {onSubmit: function(dialog) {
-
-					wToolCore.deletePage(newTitle, "Deleting to make way for page move.", true).then(function() {
-
-						dialog.close({ action: "submit" });
-
-						wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then);
-
-					}, function(error2) {
-
-						dialog.close({ action: "submit" });
-
-						wToolCore.createForm("Failed to delete page", [
-
-							{
-
-								type: "label",
-
-								text: "Failed to delete " + newTitle + ": " + error2 + "."
-
-							}
-
-						]);
-
-					});
-
-				}, submitText: "Delete & Move", submitTextPressed: "Working..."})
+				return;
 
 			}
 
-			else {
+			//logMessage(
 
-				wToolCore.createForm("Cannot move page", [
+			//	oldTitle + ' could not be moved for reason: ' + response.error.info,
 
-					{
+			//	'red'
 
-						type: "label",
+			//)
 
-						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists. Ask an admin to delete it.'
-
-					}
-
-				])
-
-			}
+			then();
 
 		}
 
-		else {
-
-			wToolCore.createForm("Cannot move page", [
-
-				{
-
-					type: "label",
-
-					text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": ' + error + '.'
-
-				}
-
-			])
-
-		}
-
-	});
+	);
 
 }
 
 
 
-var wTools_PageLink_index = 0;
 
-function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTransclusions) {
 
-	var request = {action:"query", format:"json", prop:(fixLinks ? "linkshere" : "")+"|"+(fixTransclusions ? "transcludedin" : "")+"|"+(wToolCore.settings.VIEWING_NAMESPACE === 6 ? "fileusage" : ""), titles : pageName, formatversion:"2"};
-
-	if (isCategory) request = {action:"query", format:"json", list:"categorymembers", cmtitle: pageName, cmlimit:"250"};
-
-
-
-	
-
-
-
-	wToolCore.getEntireApiRequest(request, function(pages) {
-
-		console.log("Got "+pages.length+" page(s) to fix.")
-
-
-
-		// No pages to fix, instead move to the next page.
-
-		if (pages.length === 0) {
-
-			wTools_PageLink_index += 1;
-
-			if (wTools_PageLink_index < wTools_pagesMoved.length) wTools_fixPageLinks(wTools_pagesMoved[wTools_PageLink_index].from, onCompleted, isCategory, fixLinks, fixTransclusions);
-
-			else onCompleted();
-
-			return;
-
-		}
-
-
-
-		$('#renameCategories-log').remove();
-
-		$('#progressWarning-log').remove();
-
-
-
-		var inProgressWarning = $('<span>')
-
-			.appendTo($('#movepage'))
-
-			.text('Changing links. If you see this, do not close the tab.')
-
-			.css('color', 'red')
-
-			.attr('id', 'progressWarning-log');
-
-
-
-		var log = $('<span>')
-
-			.appendTo($('#movepage'))
-
-			.append('<br/><hr/>')
-
-			.attr('id', 'renameCategories-log');
-
-		
-
-		var logMessage = function(message, colour) {
-
-			log.append(
-
-				"<p>" + message + "</p>"
-
-			).css('color', colour);
-
-			console.log(message);
-
-		}
-
-
-
-
-
-		var loopComplete = function() { // Check the next pages for new links
-
-			wTools_PageLink_index += 1;
-
-			if (wTools_PageLink_index < wTools_pagesMoved.length) wTools_fixPageLinks(wTools_pagesMoved[wTools_PageLink_index].from, onCompleted, isCategory, fixLinks, fixTransclusions);
-
-			else {
-
-				onCompleted();
-
-				inProgressWarning.remove();
-
-			}
-
-		};
-
-		var loopProcess = function(pageTitle, then) {
-
-			var changesWereMade = false;
-
-			new mw.Api().edit(pageTitle.title, function(revision) {
-
-				var output = {
-
-					text: revision.content,
-
-					summary: "Moving page [[" + wTools_pagesMoved[wTools_PageLink_index].from + "]] to [[" + wTools_pagesMoved[wTools_PageLink_index].to + "]] - updating links" + wToolCore.settings.EDIT_AD_TO_USE,
-
-					minor: true,
-
-					bot: true,
-
-					watchlist: "nochange",
-
-					tags: wToolCore.settings.EDIT_TAG_TO_USE
-
-				};
-
-				// Replace all links to the new page, as well as template transclusions.
-
-				for (var moveIndex in wTools_pagesMoved) {
-
-					var move = wTools_pagesMoved[moveIndex];
-
-					// Has a namespace
-
-					var fromPage = move.from.charAt(0).toUpperCase() + move.from.slice(1);
-
-					if (move.ns != null) {
-
-						var colonIndex = move.from.indexOf(":");
-
-						fromPage = move.from.slice(0, colonIndex + 1) + move.from.charAt(colonIndex + 1).toUpperCase() + move.from.slice(colonIndex + 2);
-
-					}
-
-					output.text = fixPage(fixPage(output.text, fromPage, move.to), fromPage, move.to);
-
-				}
-
-				changesWereMade = output.text !== revision.content;
-
-				return output;
-
-			}).then(function() {
-
-				logMessage(
-
-					(changesWereMade ? "Successfully changed link for" : "No changes made to")+" "+(wToolCore.getHtmlPageLink(pageTitle.title)) + ".",
-
-					changesWereMade ? 'green' : 'gray'
-
-				)
-
-
-
-				if (wToolCore.settings.USER_IS_ADMIN) {
-
-					setTimeout(then, 250);
-
-				}
-
-				else {
-
-					setTimeout(then, 500);
-
-				}
-
-			}, function(error) {
-
-				console.error(error)
-
-				if (error === "ratelimited") {
-
-					logMessage(
-
-						"Hit rate limit while editing "+wToolCore.getHtmlPageLink(pageTitle.title)+". Waiting 2 seconds to retry.",
-
-						'red'
-
-					)
-
-					clearTimeout();
-
-					setTimeout(function(){then({retryPrevious: true})}, 2000);
-
-				}
-
-				else {
-
-					logMessage(
-
-						"Failed to update link for " + wToolCore.getHtmlPageLink(pageTitle.title)+": "+error+".",
-
-						'red'
-
-					)
-
-					if (wToolCore.settings.USER_IS_ADMIN) {
-
-						setTimeout(function(){then({retryPrevious: true})}, 2000);
-
-					}
-
-					else {
-
-						setTimeout(function(){then({retryPrevious: true})}, 2000);
-
-					}
-
-				}
-
-			});
-
-		};
-
-		wToolCore.methodCallLoop(pages, {
-
-			callOnDone: loopComplete,
-
-			callFunction: loopProcess
-
-		});
-
-	}, function(query) {
-
-		// Turn query into an array of pages to edit
-
-		var output = [];
-
-		if ("categorymembers" in query) output = query.categorymembers;
-
-		if ("pages" in query && query.pages.length > 0) {
-
-			if ("linkshere" in query.pages[0]) output = output.concat(query.pages[0].linkshere);
-
-			if ("transcludedin" in query.pages[0]) output = output.concat(query.pages[0].transcludedin);
-
-			if ("fileusage" in query.pages[0]) output = output.concat(query.pages[0].fileusage);
-
-		}
-
-
-
-		return output;
-
-	});
-
-}
-
-function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_links) {
-
-	redirectUrl = do_default(redirectUrl, true);
-
-	force_change_links = do_default(force_change_links, false);
-
-
-
-	console.log("Now changing page links (if settings enabled).")
-
-	getFixPagecache();
-
-	var index = 0;
-
-
-
-	// If this page is a category
-
-	if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
-
-		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked') || force_change_links;
-
-
-
-		if (changeCategoryLinks) {
-
-			index = 0;
-
-			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-
-				location.href = wToolCore.getArticlePath(toTitle);
-
-			}, true);
-
-		}
-
-		else location.href = wToolCore.getArticlePath(toTitle);
-
-	}
-
-	else {
-
-		var changeTransclusions = $('input[name=changeTransclusions]').prop('checked') || force_change_links;
-
-		var changeLinks = $('input[name=changeLinks]').prop('checked') || force_change_links;
-
-
-
-		if (changeLinks || changeTransclusions) {
-
-			index = 0;
-
-			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-
-				if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
-
-			}, false, changeLinks, changeTransclusions);
-
-		}
-
-		else {
-
-			if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
-
-		}
-
-	}
-
-}
-
-function wTools_movePagePressed() {
-
-	var oldTitle = mw.config.get("wgRelevantPageName"),
-
-		to_ns = mw.config.get('wgFormattedNamespaces')[$('select[name=wpNewTitleNs]').val()].replace(' ', '_'),
-
-		to_page = $('input[name=wpNewTitleMain]').val(),
-
-		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page),
-
-		reason = $('input[name=wpReason]').val(),
-
-		talk = $('input[name=wpMovetalk]').prop('checked') ? 'yes' : void 0,
-
-		watch = $('input[name=wpWatch]').prop('checked') ? 'watch' : void 0,
-
-		supressRedirect = $('input[name=wpLeaveRedirect]').prop('checked') ? false : true;
-
-
-
-	document.getElementById("new-movePage").style.display = "none";
-
-	if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "none";
-
-	document.getElementById("new-changeLinksOnly").style.display = "none";
-
-	
-
-	wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function(response) {
-
-		if (response.move) {
-
-			wTools_doPostMoveStuff(response.move.from, response.move.to);
-
-		} else {
-
-			document.getElementById("new-movePage").style.display = "inline";
-
-			if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "inline";
-
-			mw.notify("Cannot move page: " + response.error.info, {type: "error"});
-
-		}
-
-	});
-
-}
-
-function wTools_moveSubpagesPressed() {
-
-	document.getElementById("new-movePage").style.display = "none";
-
-	if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "none";
-
-	document.getElementById("new-changeLinksOnly").style.display = "none";
-
-
-
-	var oldTitle = mw.config.get("wgRelevantPageName"),
-
-		to_ns = mw.config.get('wgFormattedNamespaces')[$('select[name=wpNewTitleNs]').val()].replace(' ', '_'),
-
-		to_page = $('input[name=wpNewTitleMain]').val(),
-
-		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page),
-
-		reason = $('input[name=wpReason]').val(),
-
-		talk = $('input[name=wpMovetalk]').prop('checked') ? 'yes' : void 0,
-
-		watch = $('input[name=wpWatch]').prop('checked') ? 'watch' : void 0,
-
-		supressRedirect = $('input[name=wpLeaveRedirect]').prop('checked') ? false : true;
-
-
+function wtools_moveSubpages(oldTitle, newTitle, reason, params, then) {
 
 	wToolCore.getEntireApiRequest({
 
@@ -3492,177 +3211,37 @@ function wTools_moveSubpagesPressed() {
 
 	}, function(subpageList) {
 
-		$('#moveSubpages-log').remove();
+		var doNext = function(doNext, index) {
 
+			if (index > subpageList.length) {
 
-
-		var log = $('<span>')
-
-			.appendTo($('#movepage'))
-
-			.append('<br/><hr/>')
-
-			.attr('id', 'moveSubpages-log');
-
-
-
-		function doMovePage(oldTitle, newTitle, noerror, reason, onerror) {
-
-			reason = do_default(reason, "");
-
-			onerror = do_default(onerror, null);
-
-
-
-			wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function(response) {
-
-				if (response.move) {
-
-					if (response.move['talkmove-errors']) {
-
-						var talkpage = oldTitle.match(':') ? oldTitle.replace(':', ' talk:') : 'Talk:' + oldTitle;
-
-
-
-						logMessage(
-
-							talkpage + ' could not be moved.',
-
-							'red'
-
-						)
-
-					} else if (response.move.talkfrom) {
-
-						logMessage(
-
-							'Successfully moved ' + response.move.talkfrom + ' to ' + response.move.talkto + '.',
-
-							'green'
-
-						)
-
-					}
-
-				}
-
-
-
-				if (response.error) {
-
-					logMessage(
-
-						oldTitle + ' could not be moved.',
-
-						'red'
-
-					)
-
-					logMessage(
-
-						'&bull; Reason: ' + response.error.info,
-
-						'red'
-
-					)
-
-					if (onerror) onerror();
-
-				} else {
-
-					logMessage(
-
-						"Successfully moved " + wToolCore.getHtmlPageLink(response.move.from) + " to " + wToolCore.getHtmlPageLink(response.move.to) + ".",
-
-						'green'
-
-					)
-
-					noerror();
-
-				}
-
-			});
-
-		}
-
-
-
-		var subpageIndex = 0;
-
-		function doMoveNextPage(){
-
-			while (subpageIndex < subpageList.length){
-
-				doMovePage(subpageList[subpageIndex].title, subpageList[subpageIndex].title.replace(oldTitle, newTitle), doMoveNextPage, "[Moving Subpages] " + reason + wToolCore.settings.EDIT_AD_TO_USE);
-
-				subpageIndex += 1;
+				if (then) then();
 
 				return;
 
 			}
 
-			wTools_doPostMoveStuff(oldTitle, newTitle);
+
+
+			wtools_moveSinglePage(
+
+				subpageList[index].title,
+
+				subpageList[index].title.replace(oldTitle, newTitle),
+
+				"[Moving Subpages] " + reason,
+
+				params,
+
+				function() {doNext(doNext, index + 1)}
+
+			);
 
 		}
 
-		doMovePage(oldTitle, newTitle, function() {
+		doNext(doNext, 0);
 
-			doMoveNextPage();
-
-		}, reason, function() {
-
-			document.getElementById("new-movePage").style.display = "inline";
-
-			if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "inline";
-
-		});
-
-	}, function(query) {return query.prefixsearch;});
-
-}
-
-function wTools_changeLinksOnly() {
-
-	document.getElementById("new-movePage").style.display = "none";
-
-	if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "none";
-
-	document.getElementById("new-changeLinksOnly").style.display = "none";
-
-	
-
-	
-
-	$('#moveSubpages-log').remove();
-
-
-
-	var log = $('<span>')
-
-		.appendTo($('#movepage'))
-
-		.append('<br/><hr/>')
-
-		.attr('id', 'moveSubpages-log');
-
-	
-
-	
-
-	var oldTitle = mw.config.get("wgRelevantPageName"),
-
-		to_ns = mw.config.get('wgFormattedNamespaces')[$('select[name=wpNewTitleNs]').val()].replace(' ', '_'),
-
-		to_page = $('input[name=wpNewTitleMain]').val(),
-
-		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page);
-
-	
-
-	wTools_pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
-
-	wTools_doPostMoveStuff(oldTitle, newTitle, false, true);
+	});
 
 }
 
@@ -3670,555 +3249,457 @@ function wTools_changeLinksOnly() {
 
 
 
-if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config.get("wgCanonicalSpecialPageName").toLowerCase() === "movepage") {
+function wtools_movePageError_pageExists(oldTitle, newTitle, reason, params, then) {
 
-	console.log("Is on move page, loading advanced UI.");
+	var form = [
 
-	new OO.ui.ButtonWidget({
+		{
 
-		label: 'Move page',
+			type: "label",
 
-		id: 'new-movePage',
-
-		flags: ['primary', 'progressive']
-
-	}).$element
-
-		.on('click', wTools_movePagePressed)
-
-		.appendTo($('button[name=wpMove]').parent().parent());
-
-
-
-	if (!$('p:contains(\'This page has no subpages.\')')[0]) {
-
-		var canUseSubpageMover = mw.config.get("wgUserGroups").filter(function(value, index, array) {
-
-			return ["extendedconfirmed", "extendedconfirmeduser", "rollbacker", "admin", "interface-admin", "reviewer", "suppressredirect", "suppress-redirect", "bureaucrat", "steward", "sysop", "bot"].indexOf(value) !== -1;
-
-		}) !== undefined;
-
-
-
-		if (canUseSubpageMover) {
-
-			new OO.ui.ButtonWidget({
-
-				label: 'Move page and subpages',
-
-				id: 'new-moveSubPages',
-
-				flags: ['primary', 'progressive']
-
-			}).$element
-
-				.on('click', wTools_moveSubpagesPressed)
-
-				.appendTo($('button[name=wpMove]').parent().parent());
+			text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists.'
 
 		}
 
-	}
+	]
 
 	
 
-	new OO.ui.ButtonWidget({
+	if (wToolCore.settings.USER_IS_ADMIN) {
 
-		label: 'Change links only',
+		form.push({
 
-		id: 'new-changeLinksOnly',
+			type: "button",
 
-		flags: ['primary', 'progressive']
+			text: 'Delete destination page then move',
 
-	}).$element
+			onclick: function(dialog) {
 
-		.on('click', wTools_changeLinksOnly)
+				dialog.close()
 
-		.appendTo($('button[name=wpMove]').parent().parent());
 
 
+				wToolCore.deletePage(newTitle, "Deleting to make way for page move.", true).then(
 
+					function() {
 
+						dialog.close({ action: "submit" });
 
-	// If this page is a category
+						wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then);
 
-	if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
+					},
 
-		var changeCategoryLinks = new OO.ui.CheckboxInputWidget({
+					function(error) {
 
-			name: 'changeCategoryLinks',
+						dialog.close({ action: "submit" });
 
-			selected: false
+						wToolCore.createForm("Failed to delete page", [
 
-		});
+							{
 
-		new OO.ui.FieldLayout( changeCategoryLinks, { label: 'Change category links for pages which use this category', align: 'inline'}).$element
+								type: "label",
 
-			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
+								text: "Failed to delete " + newTitle + ": " + error + "."
 
-	}
+							}
 
-	else {
+						],
 
-		var changeLinks = new OO.ui.CheckboxInputWidget({
+						{
 
-			name: 'changeLinks',
+							onCancel: then
 
-			selected: false
+						});
 
-		});
+					}
 
-		new OO.ui.FieldLayout( changeLinks, { label: 'Change links to the new page.', align: 'inline'}).$element
+				);
 
-			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 
-
-
-
-
-		var changeTransclusions = new OO.ui.CheckboxInputWidget({
-
-			name: 'changeTransclusions',
-
-			selected: true
-
-		});
-
-		new OO.ui.FieldLayout( changeTransclusions, { label: 'Change transclusions to the new page.', align: 'inline'}).$element
-
-			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
-
-	}
-
-
-
-
-
-	// Remove the default move button, and do some general ui cleanup
-
-	$('button[name=wpMove]').parent().remove();
-
-	if ($('#wpMovesubpages')) $('#wpMovesubpages').parent().parent().parent().remove();
-
-
-
-	var fixPage_fixCategories = false;
-
-	var fixPage_fixLinks = false;
-
-	var fixPage_fixTransclusions = true;
-
-	function getFixPagecache() {
-
-		if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
-
-			fixPage_fixCategories = $('input[name=changeCategoryLinks]').prop('checked');
-
-        }
-
-		else {
-
-			fixPage_fixCategories = false;
-
-			fixPage_fixLinks = $('input[name=changeLinks]').prop('checked');
-
-			fixPage_fixTransclusions = $('input[name=changeTransclusions]').prop('checked');
-
-		}
-
-	}
-
-
-
-	var templatePrefix = mw.config.get("wgFormattedNamespaces")[10] + ":";
-
-	var namespaceIds = mw.config.get("wgNamespaceIds");
-
-
-
-	function fixPage(content, fromTitle, toTitle) {
-
-		var safeFromTitle = wToolCore.escapeRegex(fromTitle).replace(/[ _]/g, "[ _]").replace("File:", "(?:File:|Image:|file:|image:)");
-
-		var safeToTitle = wToolCore.escapeRegex(toTitle).replace(/[ _]/g, "[ _]").replace("File:", "(?:File:|Image:|file:|image:)");
-
-
-
-		var whitespaces = "[‎ \n]*";
-
-		var toTitleNamespace = toTitle.split(":", 1)[0];
-
-
-
-		// If we are fixing categories, just fix all the links.
-
-		if (fixPage_fixCategories) {
-
-			if (!content.indexOf("#REDIRECT") == 0 || !content.indexOf("__STATICREDIRECT__") !== -1) {
-
-				if (":" in toTitle && toTitleNamespace in namespaceIds) {
-
-					// We are moving to a page with a namespace
-
-					content = content.replace(
-
-						RegExp(
-
-							"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
-
-							'g'
-
-						),
-
-						"[["+toTitle+"|$1]]"
-
-					);
-
-				}
-
-				else {
-
-					content = content.replace(
-
-						RegExp(
-
-							"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
-
-							'g'
-
-						),
-
-						"[[:"+toTitle+"|$1]]"
-
-					);
-
-				}
-
-				content = content
-
-					.replace(
-
-						RegExp(
-
-							"\\[\\["+whitespaces+"("+safeFromTitle+")"+whitespaces+"\\]\\]",
-
-							'g'
-
-						),
-
-						"[["+toTitle+"]]"
-
-					)
-
-					.replace(
-
-						RegExp(
-
-							"\\[\\["+whitespaces+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
-
-							'g'
-
-						),
-
-						"[["+toTitle+"]]"
-
-					)
-
-					.replace(
-
-						RegExp(
-
-							"\\[\\["+whitespaces+":"+safeFromTitle+""+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
-
-							'g'
-
-						),
-
-						"[[$1"+toTitle+"|$2]]"
-
-					);
 
 			}
 
-			content = content
+		});
 
-					.replace(
+	}
 
-						RegExp(
 
-							"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\}\\}",
 
-							'g'
 
-						),
 
-						"{{$1"+toTitle+"}}"
+	form.push({
 
-					)
+		type: "button",
 
-					.replace(
+		text: 'Swap pages (Unimplemented)'
 
-						RegExp(
+	});
 
-							"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\}\\}",
 
-							'g'
 
-						),
 
-						"{{$1"+toTitle+"|$2}}"
 
-					);
+	form.push({
+
+		type: "button",
+
+		text: 'Rename destination page then move (Unimplemented)'
+
+	});
+
+
+
+
+
+	wToolCore.createForm("Failed to move page", form,
+
+	{
+
+		onCancel: then
+
+	});
+
+}
+
+
+
+
+
+function wtools_changeLinks(oldTitle, newTitle, reason, params, then) {
+
+	params = do_default(params, {});
+
+	var transclusions = do_default(params.fixTransclusions, false);
+
+	var links = do_default(params.fixLinks, false);
+
+	var categoryLinks = do_default(params.fixCategoryLinks, false);
+
+
+
+	var request = {
+
+		action:"query",
+
+		format:"json",
+
+		prop:	(links ? "linkshere" : "") +
+
+			"|" + (transclusions ? "transcludedin" : "") +
+
+			"|" + (wToolCore.settings.VIEWING_NAMESPACE === 6 ? "fileusage" : ""),
+
+		titles: pageName,
+
+		formatversion:"2"
+
+	};
+
+	var request2;
+
+	if (categoryLinks) request2 = {
+
+		action: "query",
+
+		format: "json",
+
+		list: "categorymembers",
+
+		cmtitle: pageName,
+
+		cmlimit: "250"
+
+	};
+
+
+
+
+
+	var fix_pages_by_request = function(request) {
+
+		wToolCore.getEntireApiRequest(request, function(pages) {
+
+			console.log("Got " + pages.length + " page(s) to fix.");
+
+
+
+			wToolCore.methodCallLoop(pages, {
+
+				callFunction: function(page, doNext) {
+
+					// Process this page's links
+
+					
+
+					new mw.Api().edit(page.title, function(revision) {
+
+						var output = {
+
+							text: revision.content,
+
+							summary: "Moving page [[" + oldTitle + "]] to [[" + newTitle + "]] - updating links" + wToolCore.settings.EDIT_AD_TO_USE,
+
+							minor: true,
+
+							bot: true,
+
+							watchlist: "nochange",
+
+							tags: wToolCore.settings.EDIT_TAG_TO_USE
+
+						};
+
+
+
+						// Replace all links to the new page, as well as template transclusions.
+
+						for (var moveIndex in params.pages_moved) {
+
+							var move = params.pages_moved[moveIndex];
+
+							output.text = wToolCore.replaceLink(output.text, move.from, move.to, page.title);
+
+						}
+
+						return output;
+
+					});
+
+				
+
+
+
+				}
+
+			})
+
+		});
+
+	}
+
+
+
+	fix_pages_by_request(request);
+
+}
+
+
+
+
+
+
+
+function wtools_showMovePageForm(oldTitle, then, is_main) {
+
+	is_main = do_default(is_main, false);
+
+	
+
+	var form = [
+
+		{
+
+			type: "textbox",
+
+			value: oldTitle,
+
+			text: "New page name",
+
+			placeholder: "New Page Title",
+
+			name: "page_title"
+
+		},
+
+		{
+
+			type: "textbox",
+
+			text: "Reason:",
+
+			placeholder: "",
+
+			name: "reason"
+
+		},
+
+		{
+
+			type: "checkbox",
+
+			text: "Move Talk",
+
+			name: "move_talk",
+
+			value: true
+
+		},
+
+		{
+
+			type: "checkbox",
+
+			text: "Move Subpages",
+
+			name: "move_subpages",
+
+			value: false
 
 		}
 
+	];
+
+	
+
+	var canSupressRedirect = mw.config.get("wgUserGroups").indexOf("rollback") !== -1 || wToolCore.settings.USER_IS_ADMIN;
+
+	
 
 
-		else {
 
-			// Has the side effect of also fixing redirects
+	if (canSupressRedirect) {
 
-			if (fixPage_fixLinks) {
+		form.push({
 
-				if (!content.indexOf("#REDIRECT") == 0 || !content.indexOf("__STATICREDIRECT__") !== -1)
+			type: "checkbox",
 
-					if (":" in toTitle && toTitleNamespace in namespaceIds) {
+			text: "Leave Redirect",
 
-						// We are moving to a page with a namespace
+			name: "leave_redirect",
 
-						content = content.replace(RegExp("\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]", 'g'), "[["+toTitle+"|$1]]");
+			value: true
+
+		});
+
+	}
+
+	form.push({
+
+		type: "checkbox",
+
+		text: "Watch target page",
+
+		name: "watch",
+
+		value: true
+
+	});
+
+
+
+
+
+	// TODO: Add checkboxes for changing links, category, tranclusions
+
+
+
+	wToolCore.createForm("Moving " + oldTitle, form,
+
+	{
+
+		onCancel: then,
+
+		submitText: "Move",
+
+		onSubmit: function(dialog) {
+
+			if (is_main) {
+
+				wToolCore.pageMoveRedirect = dialog.page_title.value.trim();
+
+			}
+
+
+
+			var newTitle = dialog.page_title.value.trim();
+
+			var reason = dialog.reason.value.trim();
+
+			var params = {
+
+				movetalk: dialog.move_talk.selected,
+
+				watch: dialog.watch.selected,
+
+				supressRedirect: canSupressRedirect ? !dialog.leave_redirect.selected : false,
+
+				pages_moved: []
+
+			};
+
+
+
+			var do_after_move = function() {
+
+				// TODO: Instead make it do this for every moved file.
+
+				if (params.pages_moved.length > 0) {
+
+					wtools_changeLinks(oldTitle, newTitle, reason, params, then);
+
+				}
+
+			}
+
+
+
+			wtools_moveSinglePage(
+
+				oldTitle,
+
+				newTitle,
+
+				reason,
+
+				params,
+
+				function() {
+
+					if (dialog.move_subpages.selected) {
+
+						wtools_moveSubpages(oldTitle, newTitle, reason, params, do_after_move);
 
 					}
 
 					else {
 
-						content = content.replace(
-
-							RegExp(
-
-								"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
-
-								'g'
-
-							),
-
-							"[[:"+toTitle+"|$1]]"
-
-						);
+						then();
 
 					}
 
-					content = content
-
-						.replace(
-
-							RegExp(
-
-								"\\[\\["+whitespaces+"(:?)("+safeFromTitle+")"+whitespaces+"\\]\\]",
-
-								'g'
-
-							),
-
-							"[[$1"+toTitle+"|$2]]"
-
-						)
-
-						.replace(
-
-							RegExp(
-
-								"\\[\\["+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
-
-								'g'
-
-							),
-
-							"[[$1"+toTitle+"|$2]]"
-
-						)
-
-						// If undoing a move, this makes sure it fixes things like [[Apple|Apple]] to [[Apple]]
-
-						.replace(
-
-							RegExp(
-
-								"\\[\\["+whitespaces+"(:?)"+safeToTitle+whitespaces+"\\|"+whitespaces+safeToTitle+whitespaces+"\\]\\]",
-
-								'g'
-
-							),
-
-							"[[$1"+toTitle+"]]"
-
-						);
-
-				
-
-				if (wToolCore.settings.VIEWING_NAMESPACE === 6) { // File namespace, make sure to process the usage of <gallery>
-
-					content = content.replace(RegExp(safeFromTitle, 'g'), toTitle);
-
 				}
 
-			}
+			);
 
 
 
-			if (fixPage_fixTransclusions) {
-
-				// Make sure to cut out the "Template:" prefix
-
-				if (toTitle.indexOf(templatePrefix) == 0) toTitle = toTitle.replace(templatePrefix, "");
-
-				else if (!toTitle.slice(0, toTitle.indexOf(":")).toLowerCase() in namespaceIds)
-
-					// No namespace defined, it is in mainspace
-
-					toTitle = ":" + toTitle;
-
-				
-
-				if (":" in toTitle && toTitleNamespace in namespaceIds) {
-
-					// We are moving to a page with a namespace
-
-					content = content
-
-						.replace(
-
-							RegExp(
-
-								"\\{\\{"+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\}\\}", 'g'
-
-							),
-
-							"{{"+toTitle+"}}"
-
-						)
-
-						.replace(
-
-							RegExp(
-
-								"\\{\\{"+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\|", 'g'
-
-							),
-
-							"{{"+toTitle+"|"
-
-						);
-
-				}
-
-				else {
-
-					// We are moving to a page without a namespace, make sure templates include a colon
-
-					content = content
-
-						.replace(
-
-							RegExp(
-
-								"\\{\\{"+whitespaces+"\\("+safeFromTitle+")"+whitespaces+"\\}\\}", 'g'
-
-							),
-
-							"{{:"+toTitle+"}}"
-
-						)
-
-						.replace(
-
-							RegExp(
-
-								"\\{\\{"+whitespaces+"\\("+safeFromTitle+")"+whitespaces+"\\|", 'g'
-
-							),
-
-							"{{:"+toTitle+"|"
-
-						);
-
-				}
-
-
-
-				if (wToolCore.settings.VIEWING_NAMESPACE === 10) {
-
-					var shortFromTitle = wToolCore.escapeRegex(fromTitle.replace(templatePrefix, "")).replace(/[ _]/g, "[ _]");
-
-					content = content
-
-						.replace(
-
-							RegExp(
-
-								"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+shortFromTitle+whitespaces+"\\}\\}", 'g'
-
-							),
-
-							"{{$1"+toTitle+"}}"
-
-						)
-
-						.replace(
-
-							RegExp(
-
-								"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+shortFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\}\\}",
-
-								'g'
-
-							),
-
-							"{{$1"+toTitle+"|$2}}"
-
-						);
-
-				}
-
-
-
-				content = content.replace(
-
-					RegExp(
-
-						'(?:^|[^{])\\{\\{' + whitespaces + '(:?)' + safeFromTitle + whitespaces + '\\}\\}',
-
-						'g'
-
-					),
-
-					'{{$1' + toTitle + '}}'
-
-				)
-
-				.replace(
-
-					RegExp(
-
-						'(?:^|[^{])\\{\\{' + whitespaces + '(:?)' + safeFromTitle + whitespaces + '\\|' + whitespaces + '(.+?)' + whitespaces + '\\}\\}',
-
-						'g'
-
-					),
-
-					'{{$1' + toTitle + '|$2}}'
-
-				);
-
-			}
+			dialog.close();
 
 		}
 
-		return content;
+	});
 
-	}
+}
 
-};
+
+
+
+
+document.getElementById("ca-move").children[0].onclick = function(event) {
+
+	event.preventDefault();
+
+	wtools_showMovePageForm(mw.config.get("wgRelevantPageName"), function() {
+
+		if (wToolCore.pageMoveRedirect) {
+
+			location.href = wToolCore.getArticlePath(wToolCore.pageMoveRedirect);
+
+		}
+
+	}, true);
+
+}
 /*
 
 	Module script
@@ -7393,7 +6874,7 @@ function AjaxPreview(textValue, ResponseHandler, FailHandler) {
 
 	// AJAX non-API request
 
-	simpleAjaxRequest('POST', requestUrl, postFields, 'text/plain', ResponseHandler, FailHandler);
+	wToolCore.simpleAjaxRequest('POST', requestUrl, postFields, 'text/plain', ResponseHandler, FailHandler);
 
 }
 

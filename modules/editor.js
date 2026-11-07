@@ -844,7 +844,7 @@ function AjaxPreview(textValue, ResponseHandler, FailHandler) {
 	postFields.wpPreview = 'true';
 
 	// AJAX non-API request
-	simpleAjaxRequest('POST', requestUrl, postFields, 'text/plain', ResponseHandler, FailHandler);
+	wToolCore.simpleAjaxRequest('POST', requestUrl, postFields, 'text/plain', ResponseHandler, FailHandler);
 }
 function LocalPreviewAjaxHandler(ajax) {
 	// get response

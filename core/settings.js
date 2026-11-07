@@ -2,7 +2,7 @@
 	Config script
 	This script handles user settings
 */
-// Dependancies: core/settings_wiki_dependant.js,  lib/helpers.js
+// Dependancies: core/settings_wiki_dependant.js, lib/helpers.js
 
 
 
