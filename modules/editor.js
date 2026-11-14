@@ -31,7 +31,7 @@ var wEditData = {
 
 
 function wEditor_updateTimestamps(updateRevid) {
-	updateRevid = do_default(updateRevid, true);
+	updateRevid = wToolCore.do_default(updateRevid, true);
   
 	var request = {
 		action: "query",
@@ -726,7 +726,7 @@ wToolCore.wEditor_saveEdit = function() {
 	}
 }
 function wEditor_doSaveEdit(forceEdit) {
-	forceEdit = do_default(forceEdit, false);
+	forceEdit = wToolCore.do_default(forceEdit, false);
   
 	var pageContent = wEditor_getPageMetadataValue(wToolCore.wEditor_textContent());
 	var isMinorEdit = document.getElementById("wedit-minor") == undefined ? false : document.getElementById("wedit-minor").checked;

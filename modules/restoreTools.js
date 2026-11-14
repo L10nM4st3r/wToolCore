@@ -7,10 +7,10 @@
 
 if ((location.href.indexOf("&diff=") !== -1 || location.href.indexOf("?diff=") !== -1) || mw.config.get("wgAction") === "history") {
 	function addLink(item, revid, isDiffPage, isThanked, showThankLink, showRollback) {
-		isDiffPage = do_default(isDiffPage, false);
-		isThanked = do_default(isThanked, false);
-		showThankLink = do_default(showThankLink, false);
-		showRollback = do_default(showRollback, false);
+		isDiffPage = wToolCore.do_default(isDiffPage, false);
+		isThanked = wToolCore.do_default(isThanked, false);
+		showThankLink = wToolCore.do_default(showThankLink, false);
+		showRollback = wToolCore.do_default(showRollback, false);
 
 		// Add a rollback link, if the user can rollback
 		if (mw.config.get('wgAction') !== 'history' && showRollback) {

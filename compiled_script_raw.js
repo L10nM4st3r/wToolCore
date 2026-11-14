@@ -74,7 +74,7 @@ var wToolCore = {
 
 window.wToolCore = wToolCore;
 
-var do_default = function(value, default_value) {
+wToolCore.do_default = function(value, default_value) {
 
 	return value === null || value === undefined ? default_value : value;
 
@@ -1046,7 +1046,7 @@ wToolCore.getHtmlPageLink = function(pageName) {
 
 /**
 
- * Thanks a suer for an edit.
+ * Thanks a user for an edit.
 
  * @param {Number} revid the id of the revision to thank.
 
@@ -1384,7 +1384,7 @@ wToolCore.createProgressBar = function(style, id, height) {
 
 	div.setValue = function(currentValue, animated) {
 
-		animated = do_default(animated, true);
+		animated = wToolCore.do_default(animated, true);
 
 		
 
@@ -1540,17 +1540,17 @@ wToolCore.addToolbarButton = function(text, tooltip = "", id = "") {
 
 wToolCore.methodCallLoop = function(items, settings) {
 
-	settings = do_default(settings, {});
+	settings = wToolCore.do_default(settings, {});
 
 
 
-	var callOnDone = do_default(settings.callOnDone, function(){});
+	var callOnDone = wToolCore.do_default(settings.callOnDone, function(){});
 
 	var callFunction = settings.callFunction;
 
-	var autoContinue = do_default(settings.autoContinue, false);
+	var autoContinue = wToolCore.do_default(settings.autoContinue, false);
 
-	var loopTimeout = do_default(settings.loopTimeout, 0);
+	var loopTimeout = wToolCore.do_default(settings.loopTimeout, 0);
 
 
 
@@ -1570,9 +1570,9 @@ wToolCore.methodCallLoop = function(items, settings) {
 
 	function loopProcess(settings) {
 
-		settings = do_default(settings, {});
+		settings = wToolCore.do_default(settings, {});
 
-		var retryPrevious = do_default(settings.retryPrevious, false);
+		var retryPrevious = wToolCore.do_default(settings.retryPrevious, false);
 
 
 
@@ -1827,10 +1827,6 @@ wToolCore.replaceLink = function(text, fromPage, toPage, thisPage) {
 
 
 
-
-
-
-
 // Setup configuration settings
 
 var wTools_config = window.wTools_config;
@@ -1861,7 +1857,7 @@ wToolCore.settings.USE_EDIT_TAG = true;
 
 */
 
-wToolCore.settings.EDIT_SUMMARY_AD = do_default(wTools_config.editAd, " [Using [[w:meta:User:L10nM4st3r/wToolCore|wTools]]]");
+wToolCore.settings.EDIT_SUMMARY_AD = wToolCore.do_default(wTools_config.editAd, " [Using [[w:meta:User:L10nM4st3r/wToolCore|wTools]]]");
 
 
 
@@ -1909,7 +1905,7 @@ wToolCore.settings.USE_NEW_DIFF_SCREEN = true;
 
 */
 
-wToolCore.settings.SPEEDY_DELETE_REDIRECTS = do_default(wTools_config.speedyDeleteShouldRedirect, false);
+wToolCore.settings.SPEEDY_DELETE_REDIRECTS = wToolCore.do_default(wTools_config.speedyDeleteShouldRedirect, false);
 
 
 
@@ -1919,7 +1915,7 @@ wToolCore.settings.SPEEDY_DELETE_REDIRECTS = do_default(wTools_config.speedyDele
 
 */
 
-wToolCore.settings.ROLLBACK_ALL_EDIT_SUMMARY = do_default(wTools_config.rollbackAllEditSummary, "Reverted edits by [[Special:Contributions/$2|$2]] ([[User talk:$2|talk]]) to last version by $1 {reason} (Mass Rollback)");
+wToolCore.settings.ROLLBACK_ALL_EDIT_SUMMARY = wToolCore.do_default(wTools_config.rollbackAllEditSummary, "Reverted edits by [[Special:Contributions/$2|$2]] ([[User talk:$2|talk]]) to last version by $1 {reason} (Mass Rollback)");
 
 
 
@@ -1931,7 +1927,7 @@ wToolCore.settings.ROLLBACK_ALL_EDIT_SUMMARY = do_default(wTools_config.rollback
 
 */
 
-wToolCore.settings.ROLLBACK_ALL_DEFAULT_REASON = do_default(wTools_config.rollbackAllDefaultReason, "Vandalism");
+wToolCore.settings.ROLLBACK_ALL_DEFAULT_REASON = wToolCore.do_default(wTools_config.rollbackAllDefaultReason, "Vandalism");
 
 
 
@@ -1943,7 +1939,7 @@ wToolCore.settings.ROLLBACK_ALL_DEFAULT_REASON = do_default(wTools_config.rollba
 
 */
 
-wToolCore.settings.ROLLBACK_SHOW_DIFF_AFTER_RESTORE = do_default(wTools_config.showDiff, true);
+wToolCore.settings.ROLLBACK_SHOW_DIFF_AFTER_RESTORE = wToolCore.do_default(wTools_config.showDiff, true);
 
 
 
@@ -1955,7 +1951,7 @@ wToolCore.settings.ROLLBACK_SHOW_DIFF_AFTER_RESTORE = do_default(wTools_config.s
 
 */
 
-wToolCore.settings.USE_EDITOR = do_default(wTools_config.use_editor, false);
+wToolCore.settings.USE_EDITOR = wToolCore.do_default(wTools_config.use_editor, false);
 
 
 
@@ -1967,7 +1963,7 @@ wToolCore.settings.USE_EDITOR = do_default(wTools_config.use_editor, false);
 
 */
 
-wToolCore.settings.EDITOR_TEXT_SIZE = do_default(wTools_config.editorTextSize, 12);
+wToolCore.settings.EDITOR_TEXT_SIZE = wToolCore.do_default(wTools_config.editorTextSize, 12);
 
 
 
@@ -1979,7 +1975,7 @@ wToolCore.settings.EDITOR_TEXT_SIZE = do_default(wTools_config.editorTextSize, 1
 
 */
 
-wToolCore.settings.EDITOR_TEXT_WRAP = do_default(wTools_config.editorTextWrap, true);
+wToolCore.settings.EDITOR_TEXT_WRAP = wToolCore.do_default(wTools_config.editorTextWrap, true);
 
 
 
@@ -1991,7 +1987,7 @@ wToolCore.settings.EDITOR_TEXT_WRAP = do_default(wTools_config.editorTextWrap, t
 
 */
 
-wToolCore.settings.EDITOR_HIGHLIGHTING_ONLY_TEXT = do_default(wTools_config.editorHighlightingOnlyText, true);
+wToolCore.settings.EDITOR_HIGHLIGHTING_ONLY_TEXT = wToolCore.do_default(wTools_config.editorHighlightingOnlyText, true);
 
 
 
@@ -2003,7 +1999,7 @@ wToolCore.settings.EDITOR_HIGHLIGHTING_ONLY_TEXT = do_default(wTools_config.edit
 
 */
 
-wToolCore.settings.EDITOR_HIGHLIGHT_CURRENT_LINE = do_default(wTools_config.editorHighlightCurrentLine, true);
+wToolCore.settings.EDITOR_HIGHLIGHT_CURRENT_LINE = wToolCore.do_default(wTools_config.editorHighlightCurrentLine, true);
 
 
 
@@ -2015,7 +2011,7 @@ wToolCore.settings.EDITOR_HIGHLIGHT_CURRENT_LINE = do_default(wTools_config.edit
 
 */
 
-wToolCore.settings.EDITOR_DISPLAY_LINE_NUMBERS = do_default(wTools_config.editorDisplayLineNumbers, true);
+wToolCore.settings.EDITOR_DISPLAY_LINE_NUMBERS = wToolCore.do_default(wTools_config.editorDisplayLineNumbers, true);
 
 
 
@@ -2027,7 +2023,7 @@ wToolCore.settings.EDITOR_DISPLAY_LINE_NUMBERS = do_default(wTools_config.editor
 
 */
 
-wToolCore.settings.EDITOR_SCROLL_SPEED = do_default(wTools_config.editorScrollSpeed, 2.6);
+wToolCore.settings.EDITOR_SCROLL_SPEED = wToolCore.do_default(wTools_config.editorScrollSpeed, 2.6);
 
 
 
@@ -2039,7 +2035,7 @@ wToolCore.settings.EDITOR_SCROLL_SPEED = do_default(wTools_config.editorScrollSp
 
 */
 
-wToolCore.settings.EDITOR_DRAG_ENABLED = do_default(wTools_config.editorDragEnabled, true);
+wToolCore.settings.EDITOR_DRAG_ENABLED = wToolCore.do_default(wTools_config.editorDragEnabled, true);
 
 
 
@@ -2051,7 +2047,7 @@ wToolCore.settings.EDITOR_DRAG_ENABLED = do_default(wTools_config.editorDragEnab
 
 */
 
-wToolCore.settings.EDITOR_SHOW_INVISIBLE_CHARACTERS = do_default(wTools_config.editorShowInvisibleCharacters, false);
+wToolCore.settings.EDITOR_SHOW_INVISIBLE_CHARACTERS = wToolCore.do_default(wTools_config.editorShowInvisibleCharacters, false);
 
 
 
@@ -2063,7 +2059,7 @@ wToolCore.settings.EDITOR_SHOW_INVISIBLE_CHARACTERS = do_default(wTools_config.e
 
 */
 
-wToolCore.settings.EDITOR_SHOW_INDENT_GUIDES = do_default(wTools_config.editorShowIndentGuides, false);
+wToolCore.settings.EDITOR_SHOW_INDENT_GUIDES = wToolCore.do_default(wTools_config.editorShowIndentGuides, false);
 
 
 
@@ -2075,7 +2071,7 @@ wToolCore.settings.EDITOR_SHOW_INDENT_GUIDES = do_default(wTools_config.editorSh
 
 */
 
-wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS = do_default(wTools_config.disableLiveNotifications, false);
+wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS = wToolCore.do_default(wTools_config.disableLiveNotifications, false);
 
 
 
@@ -2089,7 +2085,7 @@ wToolCore.settings.DISABLE_LIVE_NOTIFICATIONS = do_default(wTools_config.disable
 
 */
 
-wToolCore.settings.SIMULATE_IS_ADMIN = do_default(wTools_config.debugSimulateAdmin, false);
+wToolCore.settings.SIMULATE_IS_ADMIN = wToolCore.do_default(wTools_config.debugSimulateAdmin, false);
 
 
 
@@ -2105,7 +2101,7 @@ wToolCore.settings.SIMULATE_IS_ADMIN = do_default(wTools_config.debugSimulateAdm
 
 */
 
-wToolCore.settings.SIMULATE_NOT_ADMIN = do_default(wTools_config.debugSimulateNotAdmin, false);
+wToolCore.settings.SIMULATE_NOT_ADMIN = wToolCore.do_default(wTools_config.debugSimulateNotAdmin, false);
 
 
 
@@ -2414,7 +2410,7 @@ if (mw.storage.get("wToolCore:successMessage")) {
 
 wToolCore.editPage = function(config) {
 
-	config = do_default(config, {});
+	config = wToolCore.do_default(config, {});
 
 
 
@@ -2470,7 +2466,7 @@ wToolCore.editPage = function(config) {
 
 wToolCore.generateEditRequest = function(config) {
 
-	config = do_default(config, {});
+	config = wToolCore.do_default(config, {});
 
 	
 
@@ -2767,6 +2763,116 @@ wToolCore.deletePage = function(pageTitle, reason, deletetalk) {
 	})
 
 }
+
+
+
+/**
+
+	Deletes the target page, if they have permission to.
+
+	@param {String} pageTitle The title of the page to delete.
+
+	@param {String} reason The reason of the page deletion.
+
+	@param {Boolean} deletetalk Whether or not to also delete the talkpage.
+
+*/
+
+wToolCore.deletePageId = function(pageId, reason, deletetalk) {
+
+	return new mw.Api().postWithToken('csrf', {
+
+		"action": "delete",
+
+		"pageid": pageId,
+
+		"reason": reason,
+
+		"tags": wToolCore.settings.EDIT_TAG_TO_USE,
+
+		"deletetalk": deletetalk ? 1 : 0
+
+	})
+
+}
+
+
+
+
+
+/// Not only bans a user, but essentially erases them from the wiki (from that IP at least...)
+
+wToolCore.banUserNukeMode = function(username, reason, expiry) {
+
+	return new mw.Api().postWithToken('csrf', {
+
+		"action": "block",
+
+		"user": username,
+
+		"reason": reason,
+
+		"expiry": expiry,
+
+		"tags": wToolCore.settings.EDIT_TAG_TO_USE,
+
+		"nocreate": true,
+
+		"autoblock": true,
+
+		"noemail": true,
+
+		"allowusertalk": true
+
+	}).then(function() {
+
+			console.log('Banned successfully.');
+
+		}, function(e) {
+
+			console.log('Did not ban. ', e);
+
+		}
+
+	);
+
+}
+
+
+
+
+
+
+
+wToolCore.revDel = function(revisions, reason) {
+
+	return new mw.Api().postWithToken('csrf', {
+
+		"action": "revisiondelete",
+
+		"type": "revision",
+
+		"reason": reason,
+
+		"ids": revisions,
+
+		"hide": "comment|content|user"
+
+		//"tags": wToolCore.settings.EDIT_TAG_TO_USE
+
+	}).then(function(e) {
+
+			console.log('Rev-delled successfully.',e);
+
+		}, function(e) {
+
+			console.log('Did not red-vel. ', e);
+
+		}
+
+	);
+
+}
 /*
 
 	Library script
@@ -2783,7 +2889,7 @@ wToolCore.deletePage = function(pageTitle, reason, deletetalk) {
 
 wToolCore.createForm = function(title, form_content, settings) {
 
-	settings = do_default(settings, {});
+	settings = wToolCore.do_default(settings, {});
 
 
 
@@ -3097,27 +3203,15 @@ wToolCore.createForm = function(title, form_content, settings) {
 
 
 
-var do_default = function(value, default_value) {
-
-	return value === null || value === undefined ? default_value : value;
-
-}
-
-
-
-
-
-
-
 function wtools_moveSinglePage(oldTitle, newTitle, reason, params, then) {
 
-	params = do_default(params, {});
+	params = wToolCore.do_default(params, {});
 
-	var movetalk = do_default(params.movetalk, true);
+	var movetalk = wToolCore.do_default(params.movetalk, true);
 
-	var watch = do_default(params.watch, false);
+	var watch = wToolCore.do_default(params.watch, false);
 
-	var supressRedirect = do_default(params.supressRedirect, false);
+	var supressRedirect = wToolCore.do_default(params.supressRedirect, false);
 
 
 
@@ -3367,13 +3461,13 @@ function wtools_movePageError_pageExists(oldTitle, newTitle, reason, params, the
 
 function wtools_changeLinks(oldTitle, newTitle, reason, params, then) {
 
-	params = do_default(params, {});
+	params = wToolCore.do_default(params, {});
 
-	var transclusions = do_default(params.fixTransclusions, false);
+	var transclusions = wToolCore.do_default(params.fixTransclusions, false);
 
-	var links = do_default(params.fixLinks, false);
+	var links = wToolCore.do_default(params.fixLinks, false);
 
-	var categoryLinks = do_default(params.fixCategoryLinks, false);
+	var categoryLinks = wToolCore.do_default(params.fixCategoryLinks, false);
 
 
 
@@ -3491,7 +3585,7 @@ function wtools_changeLinks(oldTitle, newTitle, reason, params, then) {
 
 function wtools_showMovePageForm(oldTitle, then, is_main) {
 
-	is_main = do_default(is_main, false);
+	is_main = wToolCore.do_default(is_main, false);
 
 	
 
@@ -3718,13 +3812,13 @@ if ((location.href.indexOf("&diff=") !== -1 || location.href.indexOf("?diff=") !
 
 	function addLink(item, revid, isDiffPage, isThanked, showThankLink, showRollback) {
 
-		isDiffPage = do_default(isDiffPage, false);
+		isDiffPage = wToolCore.do_default(isDiffPage, false);
 
-		isThanked = do_default(isThanked, false);
+		isThanked = wToolCore.do_default(isThanked, false);
 
-		showThankLink = do_default(showThankLink, false);
+		showThankLink = wToolCore.do_default(showThankLink, false);
 
-		showRollback = do_default(showRollback, false);
+		showRollback = wToolCore.do_default(showRollback, false);
 
 
 
@@ -5248,7 +5342,7 @@ var wEditData = {
 
 function wEditor_updateTimestamps(updateRevid) {
 
-	updateRevid = do_default(updateRevid, true);
+	updateRevid = wToolCore.do_default(updateRevid, true);
 
   
 
@@ -6638,7 +6732,7 @@ wToolCore.wEditor_saveEdit = function() {
 
 function wEditor_doSaveEdit(forceEdit) {
 
-	forceEdit = do_default(forceEdit, false);
+	forceEdit = wToolCore.do_default(forceEdit, false);
 
   
 
@@ -7181,7 +7275,205 @@ wToolCore.wEditor_OldEditorToggle = function() {
 	}
 
 }
-// Dependancies: modules/liveNotifications.js, modules/moveTools.js, modules/restoreTools.js, modules/GUIPanel.js, modules/makePageNonShort.js, modules/purgePage.js, modules/userTemplating.js, modules/speedyDelete.js, modules/voteForDelete.js, modules/editor.js////// +++++++ IMPORT SCRIPTS HERE +++++++ //////
+/*
+
+	Module script
+
+	This module adds a "template user" button to the tools dropdown
+
+*/
+
+// Dependancies: lib/editTools.js, core/settings.js, lib/userFeedback.js, lib/form.js
+
+
+
+wToolCore.showNukeUserUI = function() {
+
+	function onConfirmed(dialog) {
+
+		dialog.close();
+
+		var user_was_blocked = false;
+
+		var reason = "Nuking all \"contributions\" of this user.";
+
+
+
+
+
+		async function do_revert(out) {
+
+			var deletedPages = [];
+
+			var pages = 0;
+
+			var revdel_revisions = [];
+
+
+
+			// Loops through contribs.. Ensures that rev-dells are done AFTER reverts
+
+			function processUsercontrib(i, stage) {
+
+				if (i >= out.query.usercontribs.length) {
+
+					wToolCore.displaySuccess("User was nuked.");
+
+					return;
+
+				}
+
+
+
+				var page = out.query.usercontribs[i];
+
+
+
+				if (!user_was_blocked) {
+
+					user_was_blocked = true;
+
+					if (page.userid == 0) { // IP address
+
+						wToolCore.banUserNukeMode(mw.config.get("wgRelevantUserName"), reason, "1 year");
+
+					}
+
+					else { // Logged in
+
+						wToolCore.banUserNukeMode(mw.config.get("wgRelevantUserName"), reason, "never");
+
+					}
+
+				}
+
+
+
+				if (stage < 1) {
+
+					console.log("Revert stage enters")
+
+					if ("new" in page) {
+
+						deletedPages.push(page.pageid);
+
+						wToolCore.deletePageId(page.pageid, reason, true).done(processUsercontrib.bind(null, i, 1));
+
+						return;
+
+					}
+
+					else if ("top" in page && !(page.pageid in deletedPages)) {
+
+						wToolCore.rollbackRevid(page.revid, reason).done(processUsercontrib.bind(null, i, 1));
+
+						return;
+
+					}
+
+				}
+
+
+
+				revdel_revisions.push(page.revid);
+
+				pages ++;
+
+				if (((pages == 500) || (i == out.query.usercontribs.length - 1)) && stage < 2) {
+
+					console.log("Rev-del stage enters")
+
+					pages = 0;
+
+					wToolCore.revDel(revdel_revisions.join("|"), reason).done(processUsercontrib.bind(null, i, 2));
+
+					revdel_revisions = [];
+
+					return;
+
+				}
+
+
+
+				processUsercontrib(i + 1, 0);
+
+			}
+
+
+
+			// Start processing from the first item.
+
+			processUsercontrib(0, 0);
+
+		}
+
+
+
+		new mw.Api().get({
+
+			"action": "query",
+
+			"format": "json",
+
+			"list": "usercontribs",
+
+			"uclimit": "5000",
+
+			"ucstart": "2000-11-14T19:13:03.000Z", // Ensures FIRST edit comes first
+
+			"ucuser": mw.config.get("wgRelevantUserName"),
+
+			"ucdir": "newer",
+
+			"ucprop": "ids|flags",
+
+			"ucshow": "!patrolled|!autopatrolled"
+
+		}).done(function(out) {
+
+			do_revert(out);
+
+		})
+
+		
+
+	}
+
+
+
+	wToolCore.createForm("Nuke user",
+
+		[
+
+			{type: "label", text: "Are you sure you want to nuke this user?\n\nThis will revert all their unpatrolled edits, delete all their pages, and ban them."}
+
+		],
+
+		{
+
+			onSubmit: onConfirmed,
+
+			cancelText: "Nevermind",
+
+		}
+
+	);
+
+}
+
+
+
+
+
+
+
+if (mw.config.get("wgRelevantUserName") && wToolCore.settings.USER_IS_ACTUALLY_ADMIN) {
+
+	wToolCore.addToolButton("ca-nukeUser", "Nuke User Contribs", "Completely obliterates this user and all their \"contributions\".", wToolCore.showNukeUserUI);
+
+}
+
+// Dependancies: modules/liveNotifications.js, modules/moveTools.js, modules/restoreTools.js, modules/GUIPanel.js, modules/makePageNonShort.js, modules/purgePage.js, modules/userTemplating.js, modules/speedyDelete.js, modules/voteForDelete.js, modules/editor.js, modules/instantNuke.js////// +++++++ IMPORT SCRIPTS HERE +++++++ //////
 
 })
 

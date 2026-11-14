@@ -5,17 +5,11 @@
 // Dependancies: core/settings.js, lib/userFeedback.js, lib/helpers.js, lib/editTools.js, lib/form.js, lib/queryTools.js, core/settings_wiki_dependant.js
 
 
-var do_default = function(value, default_value) {
-	return value === null || value === undefined ? default_value : value;
-}
-
-
-
 function wtools_moveSinglePage(oldTitle, newTitle, reason, params, then) {
-	params = do_default(params, {});
-	var movetalk = do_default(params.movetalk, true);
-	var watch = do_default(params.watch, false);
-	var supressRedirect = do_default(params.supressRedirect, false);
+	params = wToolCore.do_default(params, {});
+	var movetalk = wToolCore.do_default(params.movetalk, true);
+	var watch = wToolCore.do_default(params.watch, false);
+	var supressRedirect = wToolCore.do_default(params.supressRedirect, false);
 
 	console.log("Moving page " + oldTitle + " to " + newTitle);
 	return new mw.Api().post({
@@ -140,10 +134,10 @@ function wtools_movePageError_pageExists(oldTitle, newTitle, reason, params, the
 
 
 function wtools_changeLinks(oldTitle, newTitle, reason, params, then) {
-	params = do_default(params, {});
-	var transclusions = do_default(params.fixTransclusions, false);
-	var links = do_default(params.fixLinks, false);
-	var categoryLinks = do_default(params.fixCategoryLinks, false);
+	params = wToolCore.do_default(params, {});
+	var transclusions = wToolCore.do_default(params.fixTransclusions, false);
+	var links = wToolCore.do_default(params.fixLinks, false);
+	var categoryLinks = wToolCore.do_default(params.fixCategoryLinks, false);
 
 	var request = {
 		action:"query",
@@ -202,7 +196,7 @@ function wtools_changeLinks(oldTitle, newTitle, reason, params, then) {
 
 
 function wtools_showMovePageForm(oldTitle, then, is_main) {
-	is_main = do_default(is_main, false);
+	is_main = wToolCore.do_default(is_main, false);
 	
 	var form = [
 		{

@@ -35,7 +35,7 @@ var wToolCore = {
 	DEBUG: false
 }
 window.wToolCore = wToolCore;
-var do_default = function(value, default_value) {
+wToolCore.do_default = function(value, default_value) {
 	return value === null || value === undefined ? default_value : value;
 }
 
