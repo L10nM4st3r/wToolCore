@@ -11,7 +11,7 @@ wToolCore.showNukeUserUI = function() {
 		var reason = "Nuking all \"contributions\" of this user.";
 
 
-		async function do_revert(out) {
+		function do_revert(out) {
 			var deletedPages = [];
 			var pages = 0;
 			var revdel_revisions = [];
