@@ -15,6 +15,12 @@ wToolCore.showNukeUserUI = function () {
 			var deletedPages = [];
 			var pages = 0;
 			var revdel_revisions = {};
+			function addRevision(pageid, revid) {
+				if (!revdel_revisions[pageid]) {
+					revdel_revisions[pageid] = [];
+				}
+				revdel_revisions[pageid].push(revid);
+			}
 
 			// Loops through contribs.. Ensures that rev-dells are done AFTER reverts
 			function processUsercontrib(i, stage) {
@@ -38,31 +44,18 @@ wToolCore.showNukeUserUI = function () {
 				if (stage < 1) {
 					console.log("Revert stage enters")
 					if ("new" in page) {
-						deletedPages.push(page.pageid);
 						wToolCore.deletePageId(page.pageid, reason, true).done(processUsercontrib.bind(null, i, 1));
 						return;
 					}
 					else if ("top" in page && !(page.pageid in deletedPages)) {
 						wToolCore.rollbackRevid(page.revid, reason).done(processUsercontrib.bind(null, i, 1));
-
-						if (!page.pageid in revdel_revisions) {
-							revdel_revisions[page.pageid] = [page.revid];
-						}
-						else {
-							revdel_revisions[page.pageid].push(page.revid);
-						}
+						addRevision(page.pageid, page.revid);
 						return;
 					} else {
-						if (!page.pageid in revdel_revisions) {
-							revdel_revisions[page.pageid] = [page.revid];
-						}
-						else {
-							revdel_revisions[page.pageid].push(page.revid);
-						}
+						addRevision(page.pageid, page.revid);
 					}
 				}
 
-				//revdel_revisions.push(page.revid);
 				pages++;
 				if (((pages == 500) || (i == out.query.usercontribs.length - 1)) && stage < 2) {
 					for (var key in revdel_revisions) {
@@ -122,11 +115,11 @@ if (mw.config.get("wgRelevantUserName") && wToolCore.settings.USER_IS_ACTUALLY_A
 
 if (mw.config.get('wgCanonicalSpecialPageName') === "Contributions") {
 	var createRollbackForm = function (rollbackAction, title) {
-		createForm(title, [{
+		wToolCore.createForm(title, [{
 			name: "reason",
 			type: "textbox",
 			placeholder: "Reason...",
-			value: wTools_config.rollbackAllDefaultReason,
+			value: wToolCore.settings.ROLLBACK_ALL_DEFAULT_REASON,
 			text: "Rollback Reason"
 		}],
 			{
@@ -212,13 +205,14 @@ if (mw.config.get('wgCanonicalSpecialPageName') === "Contributions") {
 		});
 
 		// Add button to rollback all edits.
-		function rollback_all (event) {
-			event.preventDefault();
+		function rollback_all() {
 			createRollbackForm(function (reason, dialouge) {
-				rollbackEverything(wTools_config.rollbackAllEditSummary.replace("{reason}", reason ? " - " + reason : "") + wTools_config.editAd, function () { dialouge.close(); location.reload(); });
+				rollbackEverything(wToolCore.settings.ROLLBACK_ALL_EDIT_SUMMARY.replace("{reason}", reason ? " - " + reason : "") + wToolCore.settings.EDIT_SUMMARY_AD, function () { dialouge.close(); location.reload(); });
 			}, "Rollback All");
 		}
 		wToolCore.addToolButton("ca-rollbackAll", "rollback all", "rollback all edits displayed here", rollback_all);
+		
+		
 		$("a[href*='action=rollback']").each(function (ind, el) {
 			el.addEventListener("click", function (event) {
 				event.preventDefault();
@@ -227,10 +221,9 @@ if (mw.config.get('wgCanonicalSpecialPageName') === "Contributions") {
 		});
 
 		// Add button to rollback all selected edits.
-		function rollback_selected(event) {
-			event.preventDefault();
+		function rollback_selected() {
 			createRollbackForm(function (reason, dialouge) {
-				rollbackSelected(wTools_config.rollbackAllEditSummary.replace("{reason}", reason ? " - " + reason : "") + wTools_config.editAd, function () { dialouge.close(); location.reload(); });
+				rollbackSelected(wToolCore.settings.ROLLBACK_ALL_EDIT_SUMMARY.replace("{reason}", reason ? " - " + reason : "") + wToolCore.settings.EDIT_SUMMARY_AD, function () { dialouge.close(); location.reload(); });
 			}, "Rollback Selected");
 		}
 		var rollbackSome = wToolCore.addToolButton("ca-rollbackSelected", "rollback selected", "rollback selected edits", rollback_selected);
