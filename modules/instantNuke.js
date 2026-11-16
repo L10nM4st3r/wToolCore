@@ -4,7 +4,7 @@
 */
 // Dependancies: lib/editTools.js, core/settings.js, lib/userFeedback.js, lib/form.js
 
-wToolCore.showNukeUserUI = function() {
+wToolCore.showNukeUserUI = function () {
 	function onConfirmed(dialog) {
 		dialog.close();
 		var user_was_blocked = false;
@@ -14,7 +14,7 @@ wToolCore.showNukeUserUI = function() {
 		function do_revert(out) {
 			var deletedPages = [];
 			var pages = 0;
-			var revdel_revisions = [];
+			var revdel_revisions = {};
 
 			// Loops through contribs.. Ensures that rev-dells are done AFTER reverts
 			function processUsercontrib(i, stage) {
@@ -44,17 +44,35 @@ wToolCore.showNukeUserUI = function() {
 					}
 					else if ("top" in page && !(page.pageid in deletedPages)) {
 						wToolCore.rollbackRevid(page.revid, reason).done(processUsercontrib.bind(null, i, 1));
+
+						if (!page.pageid in revdel_revisions) {
+							revdel_revisions[page.pageid] = [page.revid];
+						}
+						else {
+							revdel_revisions[page.pageid].push(page.revid);
+						}
 						return;
+					} else {
+						if (!page.pageid in revdel_revisions) {
+							revdel_revisions[page.pageid] = [page.revid];
+						}
+						else {
+							revdel_revisions[page.pageid].push(page.revid);
+						}
 					}
 				}
 
-				revdel_revisions.push(page.revid);
-				pages ++;
+				//revdel_revisions.push(page.revid);
+				pages++;
 				if (((pages == 500) || (i == out.query.usercontribs.length - 1)) && stage < 2) {
+					for (var key in revdel_revisions) {
+						wToolCore.revDel(revdel_revisions[key].join("|"), reason).done(processUsercontrib.bind(null, i, 2));
+					}
+
+
 					console.log("Rev-del stage enters")
 					pages = 0;
-					wToolCore.revDel(revdel_revisions.join("|"), reason).done(processUsercontrib.bind(null, i, 2));
-					revdel_revisions = [];
+					revdel_revisions = {};
 					return;
 				}
 
@@ -75,15 +93,15 @@ wToolCore.showNukeUserUI = function() {
 			"ucdir": "newer",
 			"ucprop": "ids|flags",
 			"ucshow": "!patrolled|!autopatrolled"
-		}).done(function(out) {
+		}).done(function (out) {
 			do_revert(out);
 		})
-		
+
 	}
 
 	wToolCore.createForm("Nuke user",
 		[
-			{type: "label", text: "Are you sure you want to nuke this user?\n\nThis will revert all their unpatrolled edits, delete all their pages, and ban them."}
+			{ type: "label", text: "Are you sure you want to nuke this user?\n\nThis will revert all their unpatrolled edits, delete all their pages, and ban them." }
 		],
 		{
 			onSubmit: onConfirmed,
@@ -94,6 +112,145 @@ wToolCore.showNukeUserUI = function() {
 
 
 
-if (mw.config.get("wgRelevantUserName") && wToolCore.settings.USER_IS_ACTUALLY_ADMIN) {
-	wToolCore.addToolButton("ca-nukeUser", "Nuke User Contribs", "Completely obliterates this user and all their \"contributions\".", wToolCore.showNukeUserUI);
+if (mw.config.get("wgRelevantUserName") && wToolCore.settings.USER_IS_ACTUALLY_ADMIN && mw.config.get('wgCanonicalSpecialPageName') === "Contributions") {
+	wToolCore.addToolButton("ca-nukeUser", "Nuke user", "Completely obliterates this user and all their \"contributions\".", wToolCore.showNukeUserUI);
+}
+
+
+
+// Non-admin version of this feature
+
+if (mw.config.get('wgCanonicalSpecialPageName') === "Contributions") {
+	var createRollbackForm = function (rollbackAction, title) {
+		createForm(title, [{
+			name: "reason",
+			type: "textbox",
+			placeholder: "Reason...",
+			value: wTools_config.rollbackAllDefaultReason,
+			text: "Rollback Reason"
+		}],
+			{
+				onSubmit: function (dialouge) {
+					var reason = dialouge.reason.value.trim();
+					rollbackAction(reason, dialouge);
+				},
+				submitText: "Do Rollback"
+			});
+	};
+
+	// Rollbacks all edits on the page
+	var rollbackEverything = function (editSummary, onComplete) {
+		if (editSummary === null)
+			return;
+		var list = [];
+		$("a[href*='action=rollback']").each(function (ind, el) {
+			list.push(el);
+		});
+		var index = 0;
+		function doNext() {
+			clearTimeout();
+			rollbackOneThing(list[index], editSummary, function () {
+				if (index < list.length) setTimeout(doNext, 100);
+				else onComplete();
+			});
+			index++;
+		}
+		doNext();
+	};
+
+	// Rollbacks all selected edits on the page
+	var rollbackSelected = function (editSummary, onComplete) {
+		if (editSummary === null)
+			return;
+		var rollbackList = $("input.revdelIds:checked").parents("li.mw-contributions-current").find("a[href*='action=rollback']");
+		if (rollbackList.length <= 0)
+			return mw.notify("You didn't select any edits that could be rolled back!");
+		var list = [];
+		$("input.revdelIds:checked").parents("li.mw-contributions-current").find("a[href*='action=rollback']").each(function (ind, el) {
+			list.push(el);
+		});
+		var index = 0;
+		function doNext() {
+			clearTimeout();
+			rollbackOneThing(list[index], editSummary, function () {
+				if (index < list.length) setTimeout(doNext, 100);
+				else onComplete();
+			});
+			index++;
+		}
+		doNext();
+	};
+
+	// Helper to rollback a single edit
+	var rollbackOneThing = function (edit, editSummary, done) {
+		editSummary = wToolCore.do_default(editSummary, "");
+
+		var userName;
+		// If we're in an anonymous IP range, we have to figure out each username on its own, since they might be different for each edit.
+		if (mw.config.get("wgRelevantUserName") === null)
+			userName = $(edit).parents("li:first").children("a.mw-anonuserlink").not(".mw-contributions-title").text();
+		else
+			userName = mw.config.get("wgRelevantUserName");
+		wToolCore.rollbackEdit(/title=([^&]+)/.exec(edit.href)[1], userName, editSummary).done(done);
+	};
+
+	// Only add rollback links if there is at least one rollback link present.
+	if ($("span.mw-rollback-link").length > 0) {
+		// Gets every edit entry, and adds a checkbox to the start of a line.
+		// Also stores the revid of the edit.
+		if ($("ul.mw-contributions-list .mw-revdelundel-link").length > 0)
+			$("ul.mw-contributions-list .mw-revdelundel-link").each(function (ind, el) {
+				if ($(this).children("a").length > 0) {
+					var revId = /ids=(\d+)/.exec($(this).children("a").attr("href"))[1];
+					var pageTitle = /target=([^&]+)/.exec($(this).children("a").attr("href"))[1];
+					$(el).prepend("<input type='checkbox' name='" + decodeURIComponent(pageTitle) + "' class='revdelIds' value='" + revId + "'>&nbsp;");
+					$(el).children(".revdelIds").data("index", ind);
+				}
+			});
+		else $("ul.mw-contributions-list a.mw-changeslist-date").each(function (ind, el) {
+			$(el).before("<input type='checkbox' class='revdelIds'>&nbsp;");
+		});
+
+		// Add button to rollback all edits.
+		function rollback_all (event) {
+			event.preventDefault();
+			createRollbackForm(function (reason, dialouge) {
+				rollbackEverything(wTools_config.rollbackAllEditSummary.replace("{reason}", reason ? " - " + reason : "") + wTools_config.editAd, function () { dialouge.close(); location.reload(); });
+			}, "Rollback All");
+		}
+		wToolCore.addToolButton("ca-rollbackAll", "rollback all", "rollback all edits displayed here", rollback_all);
+		$("a[href*='action=rollback']").each(function (ind, el) {
+			el.addEventListener("click", function (event) {
+				event.preventDefault();
+				rollbackOneThing(el);
+			});
+		});
+
+		// Add button to rollback all selected edits.
+		function rollback_selected(event) {
+			event.preventDefault();
+			createRollbackForm(function (reason, dialouge) {
+				rollbackSelected(wTools_config.rollbackAllEditSummary.replace("{reason}", reason ? " - " + reason : "") + wTools_config.editAd, function () { dialouge.close(); location.reload(); });
+			}, "Rollback Selected");
+		}
+		var rollbackSome = wToolCore.addToolButton("ca-rollbackSelected", "rollback selected", "rollback selected edits", rollback_selected);
+	}
+
+
+	// Add button to allow undoing an edit with a single click.
+	// $("li[class*='mw-contributions-current']").each(function (ind, el) {
+	// 	var diff = el.getAttribute("data-mw-revid");
+	// 	if (el.className.indexOf("mw-tag") > -1)
+	// 		$(el).find("span[class*='mw-tag-markers']").before("<span>[<a id=\"undoEditAll-" + diff + "\">undo</a>]</span> ");
+	// 	else
+	// 		$(el).append("<span>[<a id=\"undoEditAll-" + diff + "\">undo</a>]</span>");
+
+	// 	var undoButton = document.getElementById("undoEditAll-" + diff);
+	// 	undoButton.addEventListener("click", function (event) {
+	// 		event.preventDefault();
+	// 		undoRevid(diff).done(function () {
+	// 			undoButton.parentElement.innerHTML = "[<strong>reverted</strong>]";
+	// 		});
+	// 	});
+	// });
 }

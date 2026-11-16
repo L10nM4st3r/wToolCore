@@ -162,7 +162,7 @@ wToolCore.showVoteForDeletePageUI = function() {
 				disabled: true
 			});
 		}
-		wToolCore.createForm("Request speedy deletion for page", content, {
+		wToolCore.createForm("Request deletion for page", content, {
 			onSubmit: function(dialog) {
 				makeRequest(dialog, function() {dialog.close()});
 			}
