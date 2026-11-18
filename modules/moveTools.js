@@ -214,9 +214,18 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_li
 		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked') || force_change_links;
 
 		if (changeCategoryLinks) {
+			function update_links() {
+				wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
+				if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
+			}, false, changeLinks, false);
+			}
+
 			index = 0;
 			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-				location.href = wToolCore.getArticlePath(toTitle);
+				if (changeLinks) {
+					update_links();
+				}
+				else location.href = wToolCore.getArticlePath(toTitle);
 			}, true);
 		}
 		else location.href = wToolCore.getArticlePath(toTitle);
@@ -415,14 +424,6 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 	}
 	else {
-		var changeLinks = new OO.ui.CheckboxInputWidget({
-			name: 'changeLinks',
-			selected: false
-		});
-		new OO.ui.FieldLayout( changeLinks, { label: 'Change links to the new page.', align: 'inline'}).$element
-			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
-
-
 		var changeTransclusions = new OO.ui.CheckboxInputWidget({
 			name: 'changeTransclusions',
 			selected: true
@@ -430,6 +431,13 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 		new OO.ui.FieldLayout( changeTransclusions, { label: 'Change transclusions to the new page.', align: 'inline'}).$element
 			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 	}
+
+	var changeLinks = new OO.ui.CheckboxInputWidget({
+		name: 'changeLinks',
+		selected: false
+	});
+	new OO.ui.FieldLayout( changeLinks, { label: 'Change links to the new page.', align: 'inline'}).$element
+		.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 
 
 	// Remove the default move button, and do some general ui cleanup
