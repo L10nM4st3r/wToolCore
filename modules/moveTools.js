@@ -210,23 +210,27 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_li
 	var index = 0;
 
 	// If this page is a category
+	function update_links(_changeTransclusions) {
+		wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
+		if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
+	}, false, changeLinks, _changeTransclusions);
+	}
+
 	if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
 		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked') || force_change_links;
+		var changeLinks = $('input[name=changeLinks]').prop('checked') || force_change_links;
 
 		if (changeCategoryLinks) {
-			function update_links() {
-				wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-				if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
-			}, false, changeLinks, false);
-			}
-
 			index = 0;
 			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
 				if (changeLinks) {
-					update_links();
+					update_links(true);
 				}
 				else location.href = wToolCore.getArticlePath(toTitle);
 			}, true);
+		}
+		else if (changeLinks) {
+			update_links(true);
 		}
 		else location.href = wToolCore.getArticlePath(toTitle);
 	}
@@ -236,9 +240,7 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_li
 
 		if (changeLinks || changeTransclusions) {
 			index = 0;
-			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-				if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
-			}, false, changeLinks, changeTransclusions);
+			update_links(changeTransclusions);
 		}
 		else {
 			if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
