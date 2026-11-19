@@ -8,7 +8,7 @@
 var wTools_pagesMoved = [];
 
 function wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch, supressRedirect) {
-	console.log("Moving page "+oldTitle+" to "+newTitle);
+	console.log("Moving page " + oldTitle + " to " + newTitle);
 	return new mw.Api().post({
 		action: "move",
 		from: oldTitle,
@@ -23,7 +23,7 @@ function wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch,
 	});
 }
 function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then) {
-	wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch, supressRedirect).then(function(response) {
+	wTools_postMovePageRequest(oldTitle, newTitle, reason, movetalk, watch, supressRedirect).then(function (response) {
 		if (response.move) {
 			wTools_pagesMoved.push({
 				from: response.move.from,
@@ -33,58 +33,60 @@ function wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRed
 		}
 		then(response);
 	},
-	function(error) {
-		if (error === "articleexists") {
-			if (wToolCore.settings.USER_IS_ADMIN) {
-				wToolCore.createForm("Cannot move page", [
-					{
-						type: "label",
-						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists.'
-					}
-				], {onSubmit: function(dialog) {
-					wToolCore.deletePage(newTitle, "Deleting to make way for page move.", true).then(function() {
-						dialog.close({ action: "submit" });
-						wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then);
-					}, function(error2) {
-						dialog.close({ action: "submit" });
-						wToolCore.createForm("Failed to delete page", [
-							{
-								type: "label",
-								text: "Failed to delete " + newTitle + ": " + error2 + "."
-							}
-						]);
-					});
-				}, submitText: "Delete & Move", submitTextPressed: "Working..."})
+		function (error) {
+			if (error === "articleexists") {
+				if (wToolCore.settings.USER_IS_ADMIN) {
+					wToolCore.createForm("Cannot move page", [
+						{
+							type: "label",
+							text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists.'
+						}
+					], {
+						onSubmit: function (dialog) {
+							wToolCore.deletePage(newTitle, "Deleting to make way for page move.", true).then(function () {
+								dialog.close({ action: "submit" });
+								wTools_MovePage(oldTitle, newTitle, reason, movetalk, watch, supressRedirect, then);
+							}, function (error2) {
+								dialog.close({ action: "submit" });
+								wToolCore.createForm("Failed to delete page", [
+									{
+										type: "label",
+										text: "Failed to delete " + newTitle + ": " + error2 + "."
+									}
+								]);
+							});
+						}, submitText: "Delete & Move", submitTextPressed: "Working..."
+					})
+				}
+				else {
+					wToolCore.createForm("Cannot move page", [
+						{
+							type: "label",
+							text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists. Ask an admin to delete it.'
+						}
+					])
+				}
 			}
 			else {
 				wToolCore.createForm("Cannot move page", [
 					{
 						type: "label",
-						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": target page already exists. Ask an admin to delete it.'
+						text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": ' + error + '.'
 					}
 				])
 			}
-		}
-		else {
-			wToolCore.createForm("Cannot move page", [
-				{
-					type: "label",
-					text: 'Cannot move the page "' + oldTitle + '" to "' + newTitle + '": ' + error + '.'
-				}
-			])
-		}
-	});
+		});
 }
 
 var wTools_PageLink_index = 0;
 function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTransclusions) {
-	var request = {action:"query", format:"json", prop:(fixLinks ? "linkshere" : "")+"|"+(fixTransclusions ? "transcludedin" : "")+"|"+(wToolCore.settings.VIEWING_NAMESPACE === 6 ? "fileusage" : ""), titles : pageName, formatversion:"2"};
-	if (isCategory) request = {action:"query", format:"json", list:"categorymembers", cmtitle: pageName, cmlimit:"250"};
+	var request = { action: "query", format: "json", prop: (fixLinks ? "linkshere" : "") + "|" + (fixTransclusions ? "transcludedin" : "") + "|" + (wToolCore.settings.VIEWING_NAMESPACE === 6 ? "fileusage" : ""), titles: pageName, formatversion: "2" };
+	if (isCategory) request = { action: "query", format: "json", list: "categorymembers", cmtitle: pageName, cmlimit: "250" };
 
-	
 
-	wToolCore.getEntireApiRequest(request, function(pages) {
-		console.log("Got "+pages.length+" page(s) to fix.")
+
+	wToolCore.getEntireApiRequest(request, function (pages) {
+		console.log("Got " + pages.length + " page(s) to fix.")
 
 		// No pages to fix, instead move to the next page.
 		if (pages.length === 0) {
@@ -107,8 +109,8 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 			.appendTo($('#movepage'))
 			.append('<br/><hr/>')
 			.attr('id', 'renameCategories-log');
-		
-		var logMessage = function(message, colour) {
+
+		var logMessage = function (message, colour) {
 			log.append(
 				"<p>" + message + "</p>"
 			).css('color', colour);
@@ -116,7 +118,8 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 		}
 
 
-		var loopComplete = function() { // Check the next pages for new links
+		var loopComplete = function () { // Check the next pages for new links
+			console.log("Move Tools: Loop complete");
 			wTools_PageLink_index += 1;
 			if (wTools_PageLink_index < wTools_pagesMoved.length) wTools_fixPageLinks(wTools_pagesMoved[wTools_PageLink_index].from, onCompleted, isCategory, fixLinks, fixTransclusions);
 			else {
@@ -124,9 +127,9 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 				inProgressWarning.remove();
 			}
 		};
-		var loopProcess = function(pageTitle, then) {
+		var loopProcess = function (pageTitle, then) {
 			var changesWereMade = false;
-			new mw.Api().edit(pageTitle.title, function(revision) {
+			new mw.Api().edit(pageTitle.title, function (revision) {
 				var output = {
 					text: revision.content,
 					summary: "Moving page [[" + wTools_pagesMoved[wTools_PageLink_index].from + "]] to [[" + wTools_pagesMoved[wTools_PageLink_index].to + "]] - updating links" + wToolCore.settings.EDIT_AD_TO_USE,
@@ -148,9 +151,9 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 				}
 				changesWereMade = output.text !== revision.content;
 				return output;
-			}).then(function() {
+			}).then(function () {
 				logMessage(
-					(changesWereMade ? "Successfully changed link for" : "No changes made to")+" "+(wToolCore.getHtmlPageLink(pageTitle.title)) + ".",
+					(changesWereMade ? "Successfully changed link for" : "No changes made to") + " " + (wToolCore.getHtmlPageLink(pageTitle.title)) + ".",
 					changesWereMade ? 'green' : 'gray'
 				)
 
@@ -160,26 +163,26 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 				else {
 					setTimeout(then, 500);
 				}
-			}, function(error) {
+			}, function (error) {
 				console.error(error)
 				if (error === "ratelimited") {
 					logMessage(
-						"Hit rate limit while editing "+wToolCore.getHtmlPageLink(pageTitle.title)+". Waiting 2 seconds to retry.",
+						"Hit rate limit while editing " + wToolCore.getHtmlPageLink(pageTitle.title) + ". Waiting 2 seconds to retry.",
 						'red'
 					)
 					clearTimeout();
-					setTimeout(function(){then({retryPrevious: true})}, 2000);
+					setTimeout(function () { then({ retryPrevious: true }) }, 2000);
 				}
 				else {
 					logMessage(
-						"Failed to update link for " + wToolCore.getHtmlPageLink(pageTitle.title)+": "+error+".",
+						"Failed to update link for " + wToolCore.getHtmlPageLink(pageTitle.title) + ": " + error + ".",
 						'red'
 					)
 					if (wToolCore.settings.USER_IS_ADMIN) {
-						setTimeout(function(){then({retryPrevious: true})}, 2000);
+						setTimeout(function () { then({ retryPrevious: true }) }, 2000);
 					}
 					else {
-						setTimeout(function(){then({retryPrevious: true})}, 2000);
+						setTimeout(function () { then({ retryPrevious: true }) }, 2000);
 					}
 				}
 			});
@@ -188,7 +191,7 @@ function wTools_fixPageLinks(pageName, onCompleted, isCategory, fixLinks, fixTra
 			callOnDone: loopComplete,
 			callFunction: loopProcess
 		});
-	}, function(query) {
+	}, function (query) {
 		// Turn query into an array of pages to edit
 		var output = [];
 		if ("categorymembers" in query) output = query.categorymembers;
@@ -209,20 +212,21 @@ function wTools_doPostMoveStuff(fromTitle, toTitle, redirectUrl, force_change_li
 	getFixPagecache();
 	var index = 0;
 
-	// If this page is a category
 	function update_links(_changeTransclusions) {
-		wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
-		if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
-	}, false, changeLinks, _changeTransclusions);
+		wTools_PageLink_index = 0;
+		wTools_fixPageLinks(wTools_pagesMoved[index].from, function () {
+			if (redirectUrl) location.href = wToolCore.getArticlePath(toTitle);
+		}, false, changeLinks, _changeTransclusions);
 	}
 
+	// If this page is a category
 	if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
 		var changeCategoryLinks = $('input[name=changeCategoryLinks]').prop('checked') || force_change_links;
 		var changeLinks = $('input[name=changeLinks]').prop('checked') || force_change_links;
 
 		if (changeCategoryLinks) {
 			index = 0;
-			wTools_fixPageLinks(wTools_pagesMoved[index].from, function() {
+			wTools_fixPageLinks(wTools_pagesMoved[index].from, function () {
 				if (changeLinks) {
 					update_links(true);
 				}
@@ -260,14 +264,14 @@ function wTools_movePagePressed() {
 	document.getElementById("new-movePage").style.display = "none";
 	if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "none";
 	document.getElementById("new-changeLinksOnly").style.display = "none";
-	
-	wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function(response) {
+
+	wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function (response) {
 		if (response.move) {
 			wTools_doPostMoveStuff(response.move.from, response.move.to);
 		} else {
 			document.getElementById("new-movePage").style.display = "inline";
 			if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "inline";
-			mw.notify("Cannot move page: " + response.error.info, {type: "error"});
+			mw.notify("Cannot move page: " + response.error.info, { type: "error" });
 		}
 	});
 }
@@ -291,7 +295,7 @@ function wTools_moveSubpagesPressed() {
 		pssearch: oldTitle + '/',
 		pslimit: 'max',
 		format: 'json'
-	}, function(subpageList) {
+	}, function (subpageList) {
 		$('#moveSubpages-log').remove();
 
 		var log = $('<span>')
@@ -303,7 +307,7 @@ function wTools_moveSubpagesPressed() {
 			reason = wToolCore.do_default(reason, "");
 			onerror = wToolCore.do_default(onerror, null);
 
-			wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function(response) {
+			wTools_MovePage(oldTitle, newTitle, reason, talk, watch, supressRedirect, function (response) {
 				if (response.move) {
 					if (response.move['talkmove-errors']) {
 						var talkpage = oldTitle.match(':') ? oldTitle.replace(':', ' talk:') : 'Talk:' + oldTitle;
@@ -341,42 +345,43 @@ function wTools_moveSubpagesPressed() {
 		}
 
 		var subpageIndex = 0;
-		function doMoveNextPage(){
-			while (subpageIndex < subpageList.length){
+		function doMoveNextPage() {
+			while (subpageIndex < subpageList.length) {
 				doMovePage(subpageList[subpageIndex].title, subpageList[subpageIndex].title.replace(oldTitle, newTitle), doMoveNextPage, "[Moving Subpages] " + reason + wToolCore.settings.EDIT_AD_TO_USE);
 				subpageIndex += 1;
 				return;
 			}
 			wTools_doPostMoveStuff(oldTitle, newTitle);
 		}
-		doMovePage(oldTitle, newTitle, function() {
+		doMovePage(oldTitle, newTitle, function () {
 			doMoveNextPage();
-		}, reason, function() {
+		}, reason, function () {
 			document.getElementById("new-movePage").style.display = "inline";
 			if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "inline";
 		});
-	}, function(query) {return query.prefixsearch;});
+	}, function (query) { return query.prefixsearch; });
 }
 function wTools_changeLinksOnly() {
 	document.getElementById("new-movePage").style.display = "none";
 	if (document.getElementById("new-moveSubPages")) document.getElementById("new-moveSubPages").style.display = "none";
 	document.getElementById("new-changeLinksOnly").style.display = "none";
-	
-	
+
+
 	$('#moveSubpages-log').remove();
 
 	var log = $('<span>')
 		.appendTo($('#movepage'))
 		.append('<br/><hr/>')
 		.attr('id', 'moveSubpages-log');
-	
-	
+
+
 	var oldTitle = mw.config.get("wgRelevantPageName"),
 		to_ns = mw.config.get('wgFormattedNamespaces')[$('select[name=wpNewTitleNs]').val()].replace(' ', '_'),
 		to_page = $('input[name=wpNewTitleMain]').val(),
 		newTitle = (to_ns === '' ? to_page : to_ns + ':' + to_page);
-	
-	wTools_pagesMoved.push({from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle)});
+
+	wTools_pagesMoved.push({ from: oldTitle, to: newTitle, ns: wToolCore.namespaceNameToId(newTitle) });
+	wTools_PageLink_index = 0;
 	wTools_doPostMoveStuff(oldTitle, newTitle, false, true);
 }
 
@@ -392,7 +397,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 		.appendTo($('button[name=wpMove]').parent().parent());
 
 	if (!$('p:contains(\'This page has no subpages.\')')[0]) {
-		var canUseSubpageMover = mw.config.get("wgUserGroups").filter(function(value, index, array) {
+		var canUseSubpageMover = mw.config.get("wgUserGroups").filter(function (value, index, array) {
 			return ["extendedconfirmed", "extendedconfirmeduser", "rollbacker", "admin", "interface-admin", "reviewer", "suppressredirect", "suppress-redirect", "bureaucrat", "steward", "sysop", "bot"].indexOf(value) !== -1;
 		}) !== undefined;
 
@@ -406,7 +411,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 				.appendTo($('button[name=wpMove]').parent().parent());
 		}
 	}
-	
+
 	new OO.ui.ButtonWidget({
 		label: 'Change links only',
 		id: 'new-changeLinksOnly',
@@ -422,7 +427,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 			name: 'changeCategoryLinks',
 			selected: false
 		});
-		new OO.ui.FieldLayout( changeCategoryLinks, { label: 'Change category links for pages which use this category', align: 'inline'}).$element
+		new OO.ui.FieldLayout(changeCategoryLinks, { label: 'Change category links for pages which use this category', align: 'inline' }).$element
 			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 	}
 	else {
@@ -430,7 +435,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 			name: 'changeTransclusions',
 			selected: true
 		});
-		new OO.ui.FieldLayout( changeTransclusions, { label: 'Change transclusions to the new page.', align: 'inline'}).$element
+		new OO.ui.FieldLayout(changeTransclusions, { label: 'Change transclusions to the new page.', align: 'inline' }).$element
 			.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 	}
 
@@ -438,7 +443,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 		name: 'changeLinks',
 		selected: false
 	});
-	new OO.ui.FieldLayout( changeLinks, { label: 'Change links to the new page.', align: 'inline'}).$element
+	new OO.ui.FieldLayout(changeLinks, { label: 'Change links to the new page.', align: 'inline' }).$element
 		.appendTo($('input[name=wpWatch]').parent().parent().parent().parent());
 
 
@@ -452,7 +457,7 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 	function getFixPagecache() {
 		if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
 			fixPage_fixCategories = $('input[name=changeCategoryLinks]').prop('checked');
-        }
+		}
 		else {
 			fixPage_fixCategories = false;
 			fixPage_fixLinks = $('input[name=changeLinks]').prop('checked');
@@ -473,106 +478,146 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 		// If we are fixing categories, just fix all the links.
 		if (fixPage_fixCategories) {
 			if (!content.indexOf("#REDIRECT") == 0 || !content.indexOf("__STATICREDIRECT__") !== -1) {
-				if (":" in toTitle && toTitleNamespace in namespaceIds) {
+				if (toTitle.indexOf(":") >= 0 && toTitleNamespace in namespaceIds) {
 					// We are moving to a page with a namespace
 					content = content.replace(
 						RegExp(
-							"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
+							"\\[\\[" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\]\\]",
 							'g'
 						),
-						"[["+toTitle+"|$1]]"
+						"[[" + toTitle + "|$1]]"
 					);
 				}
 				else {
 					content = content.replace(
 						RegExp(
-							"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
+							"\\[\\[" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\]\\]",
 							'g'
 						),
-						"[[:"+toTitle+"|$1]]"
+						"[[:" + toTitle + "|$1]]"
 					);
 				}
 				content = content
 					.replace(
 						RegExp(
-							"\\[\\["+whitespaces+"("+safeFromTitle+")"+whitespaces+"\\]\\]",
+							"\\[\\[" + whitespaces + "(" + safeFromTitle + ")" + whitespaces + "\\]\\]",
 							'g'
 						),
-						"[["+toTitle+"]]"
+						"[[" + toTitle + "]]"
 					)
 					.replace(
 						RegExp(
-							"\\[\\["+whitespaces+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
+							"\\[\\[" + whitespaces + safeFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\]\\]",
 							'g'
 						),
-						"[["+toTitle+"]]"
+						"[[" + toTitle + "]]"
 					)
 					.replace(
 						RegExp(
-							"\\[\\["+whitespaces+":"+safeFromTitle+""+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
+							"\\[\\[" + whitespaces + ":" + safeFromTitle + "" + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\]\\]",
 							'g'
 						),
-						"[[$1"+toTitle+"|$2]]"
+						"[[$1" + toTitle + "|$2]]"
 					);
 			}
-			content = content
+
+			content = content.replace(
+				RegExp(
+					"(?:^|[^{])\\{\\{" + whitespaces + "(:?)" + safeFromTitle + whitespaces + "\\}\\}",
+					'g'
+				),
+				"{{$1" + toTitle + "}}"
+			)
+				.replace(
+					RegExp(
+						"(?:^|[^{])\\{\\{" + whitespaces + "(:?)" + safeFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\}\\}",
+						'g'
+					),
+					"{{$1" + toTitle + "|$2}}"
+				);
+
+
+
+			if (fixPage_fixLinks) {
+				// Colon links
+				content = content.replace(
+					RegExp(
+						"\\[\\[\\:" + whitespaces + safeFromTitle + whitespaces + "\\]\\]",
+						"g"
+					),
+					"[[:" + toTitle + "]]"
+				)
 					.replace(
 						RegExp(
-							"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\}\\}",
-							'g'
+							"\\[\\[\\:" + whitespaces + safeFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\]\\]",
+							"g"
 						),
-						"{{$1"+toTitle+"}}"
+						"[[:" + toTitle + "|$1]]"
 					)
-					.replace(
-						RegExp(
-							"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\}\\}",
-							'g'
-						),
-						"{{$1"+toTitle+"|$2}}"
-					);
+			}
 		}
 
 		else {
 			// Has the side effect of also fixing redirects
+			if (wToolCore.settings.VIEWING_NAMESPACE === 14) {
+				// Colon category links
+				content = content.replace(
+					RegExp(
+						"\\[\\[\\:" + whitespaces + safeFromTitle + whitespaces + "\\]\\]",
+						"g"
+					),
+					"[[:" + toTitle + "]]"
+				)
+					.replace(
+						RegExp(
+							"\\[\\[\\:" + whitespaces + safeFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\]\\]",
+							"g"
+						),
+						"[[:" + toTitle + "|$1]]"
+					)
+			}
+
+
+
 			if (fixPage_fixLinks) {
 				if (!content.indexOf("#REDIRECT") == 0 || !content.indexOf("__STATICREDIRECT__") !== -1)
-					if (":" in toTitle && toTitleNamespace in namespaceIds) {
+					if (toTitle.indexOf(":") >= 0 && toTitleNamespace in namespaceIds) {
 						// We are moving to a page with a namespace
-						content = content.replace(RegExp("\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]", 'g'), "[["+toTitle+"|$1]]");
+						content = content.replace(RegExp("\\[\\[" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\]\\]", 'g'), "[[" + toTitle + "|$1]]");
 					}
 					else {
 						content = content.replace(
 							RegExp(
-								"\\[\\["+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\]\\]",
+								"\\[\\[" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\]\\]",
 								'g'
 							),
-							"[[:"+toTitle+"|$1]]"
+							"[[:" + toTitle + "|$1]]"
 						);
 					}
-					content = content
-						.replace(
-							RegExp(
-								"\\[\\["+whitespaces+"(:?)("+safeFromTitle+")"+whitespaces+"\\]\\]",
-								'g'
-							),
-							"[[$1"+toTitle+"|$2]]"
-						)
-						.replace(
-							RegExp(
-								"\\[\\["+whitespaces+"(:?)"+safeFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\]\\]",
-								'g'
-							),
-							"[[$1"+toTitle+"|$2]]"
-						)
-						// If undoing a move, this makes sure it fixes things like [[Apple|Apple]] to [[Apple]]
-						.replace(
-							RegExp(
-								"\\[\\["+whitespaces+"(:?)"+safeToTitle+whitespaces+"\\|"+whitespaces+safeToTitle+whitespaces+"\\]\\]",
-								'g'
-							),
-							"[[$1"+toTitle+"]]"
-						);
-				
+				content = content
+					.replace(
+						RegExp(
+							"\\[\\[" + whitespaces + "(:?)(" + safeFromTitle + ")" + whitespaces + "\\]\\]",
+							'g'
+						),
+						"[[$1" + toTitle + "|$2]]"
+					)
+					.replace(
+						RegExp(
+							"\\[\\[" + whitespaces + "(:?)" + safeFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\]\\]",
+							'g'
+						),
+						"[[$1" + toTitle + "|$2]]"
+					)
+					// If undoing a move, this makes sure it fixes things like [[Apple|Apple]] to [[Apple]]
+					.replace(
+						RegExp(
+							"\\[\\[" + whitespaces + "(:?)" + safeToTitle + whitespaces + "\\|" + whitespaces + safeToTitle + whitespaces + "\\]\\]",
+							'g'
+						),
+						"[[$1" + toTitle + "]]"
+					);
+
 				if (wToolCore.settings.VIEWING_NAMESPACE === 6) { // File namespace, make sure to process the usage of <gallery>
 					content = content.replace(RegExp(safeFromTitle, 'g'), toTitle);
 				}
@@ -584,21 +629,21 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 				else if (!toTitle.slice(0, toTitle.indexOf(":")).toLowerCase() in namespaceIds)
 					// No namespace defined, it is in mainspace
 					toTitle = ":" + toTitle;
-				
-				if (":" in toTitle && toTitleNamespace in namespaceIds) {
+
+				if (toTitle.indexOf(":") >= 0 && toTitleNamespace in namespaceIds) {
 					// We are moving to a page with a namespace
 					content = content
 						.replace(
 							RegExp(
-								"\\{\\{"+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\}\\}", 'g'
+								"\\{\\{" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\}\\}", 'g'
 							),
-							"{{"+toTitle+"}}"
+							"{{" + toTitle + "}}"
 						)
 						.replace(
 							RegExp(
-								"\\{\\{"+whitespaces+"\\:("+safeFromTitle+")"+whitespaces+"\\|", 'g'
+								"\\{\\{" + whitespaces + "\\:(" + safeFromTitle + ")" + whitespaces + "\\|", 'g'
 							),
-							"{{"+toTitle+"|"
+							"{{" + toTitle + "|"
 						);
 				}
 				else {
@@ -606,15 +651,15 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 					content = content
 						.replace(
 							RegExp(
-								"\\{\\{"+whitespaces+"\\("+safeFromTitle+")"+whitespaces+"\\}\\}", 'g'
+								"\\{\\{" + whitespaces + "\\(" + safeFromTitle + "\\)" + whitespaces + "\\}\\}", 'g'
 							),
-							"{{:"+toTitle+"}}"
+							"{{:" + toTitle + "}}"
 						)
 						.replace(
 							RegExp(
-								"\\{\\{"+whitespaces+"\\("+safeFromTitle+")"+whitespaces+"\\|", 'g'
+								"\\{\\{" + whitespaces + "\\(" + safeFromTitle + "\\)" + whitespaces + "\\|", 'g'
 							),
-							"{{:"+toTitle+"|"
+							"{{:" + toTitle + "|"
 						);
 				}
 
@@ -623,16 +668,16 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 					content = content
 						.replace(
 							RegExp(
-								"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+shortFromTitle+whitespaces+"\\}\\}", 'g'
+								"(?:^|[^{])\\{\\{" + whitespaces + "(:?)" + shortFromTitle + whitespaces + "\\}\\}", 'g'
 							),
-							"{{$1"+toTitle+"}}"
+							"{{$1" + toTitle + "}}"
 						)
 						.replace(
 							RegExp(
-								"(?:^|[^{])\\{\\{"+whitespaces+"(:?)"+shortFromTitle+whitespaces+"\\|"+whitespaces+"(.+?)"+whitespaces+"\\}\\}",
+								"(?:^|[^{])\\{\\{" + whitespaces + "(:?)" + shortFromTitle + whitespaces + "\\|" + whitespaces + "(.+?)" + whitespaces + "\\}\\}",
 								'g'
 							),
-							"{{$1"+toTitle+"|$2}}"
+							"{{$1" + toTitle + "|$2}}"
 						);
 				}
 
@@ -643,13 +688,13 @@ if (typeof mw.config.get("wgCanonicalSpecialPageName") === "string" && mw.config
 					),
 					'{{$1' + toTitle + '}}'
 				)
-				.replace(
-					RegExp(
-						'(?:^|[^{])\\{\\{' + whitespaces + '(:?)' + safeFromTitle + whitespaces + '\\|' + whitespaces + '(.+?)' + whitespaces + '\\}\\}',
-						'g'
-					),
-					'{{$1' + toTitle + '|$2}}'
-				);
+					.replace(
+						RegExp(
+							'(?:^|[^{])\\{\\{' + whitespaces + '(:?)' + safeFromTitle + whitespaces + '\\|' + whitespaces + '(.+?)' + whitespaces + '\\}\\}',
+							'g'
+						),
+						'{{$1' + toTitle + '|$2}}'
+					);
 			}
 		}
 		return content;
