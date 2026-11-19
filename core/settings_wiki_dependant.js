@@ -221,6 +221,22 @@ wToolCore.perWikiConfig = {
 						]
 					},
 					{
+						template_name: "Gay Trout",
+						formHeader: "Gay Trout {user}",
+						tooltip: "Slap this user with a wet, gay trout.",
+						description: "Ooh no, they did something super gay.",
+						sectionTitle: "Gay Trout",
+						message: "{{gay trout|" + mw.config.get("wgUserName") + "|2={{{REASON}}} ~~~~}}",
+						editSummary: "Get [[gay|gay slapped]] with a wet trout!",
+						arguments: [
+							{
+								name: "REASON",
+								type: "textbox",
+								placeholder: "Reason"
+							}
+						]
+					},
+					{
 						template_name: "Whale",
 						formHeader: "Whale {user}",
 						tooltip: "Smash this user with a whale.",
