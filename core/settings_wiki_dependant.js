@@ -49,8 +49,8 @@ wToolCore.perWikiConfig = {
 		VFD: {
 			target_page: "Uncyclopedia:Votes_for_deletion",
 			message: "\n\n== [[:{{{PAGE}}}]]{{{REDIRECTS}}} ==\n{{Votervfd|time=~~~~~\n|scoretext={{{SCORETEXT}}}\n|keepnumber=0\n|keep=\n|delnumber=1\n|delete=\n# {{Nom}} {{{REASON}}} ~~~~\n|comments=\n}}",
-			redirect_append_start: " | REDIRECT(S): {{ShortRedirect|{{{PAGE}}}}}",
-			redirect_append: ", {{ShortRedirect|{{{PAGE}}}}}",
+			redirect_append_start: " | REDIRECT(S): {{ShortRedirect|{{{CONTENT}}}}}",
+			redirect_append: ", {{ShortRedirect|{{{CONTENT}}}}}",
 			send_page_notice: "{{VFD}}\n\n{{{CONTENT}}}",
 			append_message_rules: [
 				{
