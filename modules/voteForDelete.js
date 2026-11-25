@@ -24,8 +24,8 @@ wToolCore.showVoteForDeletePageUI = function() {
 				var redirect = redirectData[redirectIndex];
 				if (dialog["redirectoption_" + redirect.title].isSelected()) {
 					redirectsDeleting ++;
-					if (!additionalRedirectText) additionalRedirectText += setVars(configData.redirect_append_start);
-					else additionalRedirectText += setVars(configData.redirect_append);
+					if (!additionalRedirectText) additionalRedirectText += setVars(configData.redirect_append_start, redirect.title);
+					else additionalRedirectText += setVars(configData.redirect_append, redirect.title);
 				}
 			}
 		}
